@@ -41,7 +41,7 @@ cp kubernetes/.env.example kubernetes/.env
 Fill in at least:
 
 - **URLs:** `IMMICH_DOMAIN`, `IMMICH_PUBLIC_URL`, `GRAFANA_DOMAIN`, `GRAFANA_ROOT_URL`, `PROMETHEUS_DOMAIN`, `ALERTS_DOMAIN`
-- **Secrets:** `IMMICH_DB_PASSWORD`, `GRAFANA_ADMIN_*`, `ALERTS_BASIC_AUTH_*` (Alertmanager ingress)
+- **Secrets:** `IMMICH_DB_PASSWORD`, `GRAFANA_ADMIN_*`, `ALERTS_BASIC_AUTH_*` (Alertmanager + Prometheus ingress; Blackbox probes)
 - **S3 backups:** `BACKUP_S3_BUCKET`, `BACKUP_S3_PREFIX`, `AWS_REGION`, optional `BACKUP_S3_ACCESS_KEY_ID` / `BACKUP_S3_SECRET_ACCESS_KEY` for `./scripts/k8s.sh secrets`
 - **Tunnel:** `CLOUDFLARE_TUNNEL_TOKEN`, `CLOUDFLARE_TUNNEL_ORIGIN` (default `http://127.0.0.1:80` → Traefik)
 - **Optional:** `CLOUDFLARE_EXPORTER_API_TOKEN`, `CLOUDFLARE_ACCOUNT_IDS` for the Cloudflare exporter
@@ -79,7 +79,7 @@ Optional: `render-config` / `write-config` from `kubernetes/cloudflared-config.y
 | Namespace    | What                                                                                                                                                                                                                                                 |
 | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `immich`     | Immich (Traefik `IngressRoute`, auth rate limit), Postgres, Redis, ML (HPA max 1 by default), library S3 sidecar; weekly `pg_dump` CronJob → S3                                                                                                      |
-| `monitoring` | Prometheus, Grafana, Alertmanager (basic auth on alerts ingress), node-exporter, kube-state-metrics, blackbox, optional Cloudflare exporter, [fail2ban-exporter](https://github.com/hectorjsmith/fail2ban-prometheus-exporter) (needs host fail2ban) |
+| `monitoring` | Prometheus, Grafana, Alertmanager (basic auth on Prometheus + alerts ingresses), node-exporter, kube-state-metrics, blackbox, optional Cloudflare exporter, [fail2ban-exporter](https://github.com/hectorjsmith/fail2ban-prometheus-exporter) (needs host fail2ban) |
 
 Grafana dashboards include community Immich / k8s / Traefik JSON plus a small **Server security signals** board (`f2b_*` + node/kube metrics; not raw auth logs).
 
@@ -100,6 +100,6 @@ More flags: `./scripts/k8s.sh` (no args) or read `k8s.sh` usage block.
 ```bash
 curl -sS -o /dev/null -w '%{http_code}\n' "https://<IMMICH_DOMAIN>/api/server/ping"
 curl -sS -o /dev/null -w '%{http_code}\n' "https://<GRAFANA_DOMAIN>/api/health"
-curl -sS -o /dev/null -w '%{http_code}\n' "https://<PROMETHEUS_DOMAIN>/-/ready"
+curl -sS -o /dev/null -w '%{http_code}\n' -u 'USER:PASS' "https://<PROMETHEUS_DOMAIN>/-/ready"
 curl -sS -o /dev/null -w '%{http_code}\n' -u 'USER:PASS' "https://<ALERTS_DOMAIN>/-/healthy"
 ```

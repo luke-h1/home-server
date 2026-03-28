@@ -23,7 +23,7 @@ usage() {
   echo "
 Commands:
   env-check          Verify kubectl and envsubst; load .env
-  secrets            Create/update immich + monitoring secrets (incl. Alertmanager Traefik basic auth)
+  secrets            Create/update immich + monitoring secrets (incl. Traefik basic auth on Alertmanager + Prometheus)
   apply all|immich|immich-backup|monitoring   Kustomize + envsubst + kubectl apply (server-side; large ConfigMaps)
   deploy all            secrets + apply all (first-time convenience)
   diff all|immich|immich-backup|monitoring   Preview changes
@@ -162,6 +162,12 @@ cmd_secrets() {
     --from-literal=users="${ALERTS_BASIC_AUTH_USER}:${alerts_hash}" \
     --dry-run=client -o yaml | kubectl apply -f -
   echo "alertmanager-basic-auth applied (HTTP basic auth on Alertmanager ingress / ${ALERTS_DOMAIN:-alerts})."
+
+  kubectl create secret generic prometheus-basic-auth \
+    -n monitoring \
+    --from-literal=users="${ALERTS_BASIC_AUTH_USER}:${alerts_hash}" \
+    --dry-run=client -o yaml | kubectl apply -f -
+  echo "prometheus-basic-auth applied (HTTP basic auth on Prometheus ingress / ${PROMETHEUS_DOMAIN:-prometheus})."
 
   if [[ -n "${BACKUP_S3_ACCESS_KEY_ID:-}" && -n "${BACKUP_S3_SECRET_ACCESS_KEY:-}" ]]; then
     kubectl create secret generic backup-s3-credentials \

@@ -43,5 +43,6 @@ resources:
   - grafana-service.yaml
   - ingress-grafana.yaml
   - ingress-prometheus.yaml
+  - middleware-prometheus-auth.yaml
   - middleware-alertmanager-auth.yaml
   - ingress-alertmanager.yaml

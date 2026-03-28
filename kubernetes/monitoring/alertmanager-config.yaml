@@ -4,13 +4,36 @@ metadata:
   name: alertmanager-config
   namespace: monitoring
 data:
+  # Add email_configs / slack_configs / webhook under receivers.default to get notified.
+  # Prometheus rules live in prometheus-config ConfigMap (alerts.yml).
   alertmanager.yml: |
     global:
       resolve_timeout: 5m
     route:
       receiver: default
+      group_by: ['alertname', 'service', 'job']
       group_wait: 30s
       group_interval: 5m
       repeat_interval: 4h
+    inhibit_rules:
+      # Prefer in-cluster Immich signal over blackbox when both fire.
+      - source_matchers:
+          - alertname="ImmichServerDown"
+        target_matchers:
+          - alertname="ServiceUnreachable"
+          - service="immich"
+      # If Prometheus or Alertmanager pods are down, skip duplicate external probe alerts.
+      - source_matchers:
+          - alertname="InfrastructureTargetDown"
+          - job="prometheus"
+        target_matchers:
+          - alertname="ServiceUnreachable"
+          - service="prometheus"
+      - source_matchers:
+          - alertname="InfrastructureTargetDown"
+          - job="alertmanager"
+        target_matchers:
+          - alertname="ServiceUnreachable"
+          - service="alertmanager"
     receivers:
       - name: default

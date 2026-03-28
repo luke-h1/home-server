@@ -12,6 +12,8 @@ data:
       alertmanagers:
         - static_configs:
             - targets: ["alertmanager:9093"]
+    rule_files:
+      - /etc/prometheus/alerts.yml
     scrape_configs:
       - job_name: prometheus
         static_configs:
@@ -104,8 +106,12 @@ data:
         static_configs:
           - targets:
               - "${IMMICH_PUBLIC_URL}/api/server/ping"
+            labels:
+              service: immich
+          - targets:
               - "${GRAFANA_ROOT_URL}/api/health"
-              - "https://${PROMETHEUS_DOMAIN}/-/ready"
+            labels:
+              service: grafana
         relabel_configs:
           - source_labels: [__address__]
             target_label: __param_target
@@ -122,6 +128,12 @@ data:
         static_configs:
           - targets:
               - "https://${ALERTS_DOMAIN}/-/healthy"
+            labels:
+              service: alertmanager
+          - targets:
+              - "https://${PROMETHEUS_DOMAIN}/-/ready"
+            labels:
+              service: prometheus
         relabel_configs:
           - source_labels: [__address__]
             target_label: __param_target
@@ -129,3 +141,50 @@ data:
             target_label: instance
           - target_label: __address__
             replacement: blackbox-exporter:9115
+  alerts.yml: |
+    groups:
+      - name: external_services_public
+        rules:
+          - alert: ServiceUnreachable
+            expr: probe_success{job="blackbox-http"} == 0
+            for: 3m
+            labels:
+              severity: critical
+            annotations:
+              summary: "{{ $labels.service }} appears down (public HTTP check)"
+              description: "Blackbox cannot reach {{ $labels.instance }}; probe_success has been 0 for at least 3m."
+
+      - name: external_services_authenticated
+        rules:
+          - alert: ServiceUnreachable
+            expr: probe_success{job="blackbox-http-basic-auth"} == 0
+            for: 3m
+            labels:
+              severity: critical
+            annotations:
+              summary: "{{ $labels.service }} appears down (authenticated HTTP check)"
+              description: "Blackbox cannot reach {{ $labels.instance }}; probe_success has been 0 for at least 3m."
+
+      - name: applications_in_cluster
+        rules:
+          - alert: ImmichServerDown
+            expr: up{job="immich-server"} == 0
+            for: 3m
+            labels:
+              severity: critical
+              service: immich
+            annotations:
+              summary: "Immich server metrics target is down"
+              description: "Prometheus cannot scrape immich-server in the cluster (in-cluster availability)."
+
+      - name: monitoring_infrastructure
+        rules:
+          - alert: InfrastructureTargetDown
+            expr: up{job=~"prometheus|alertmanager|kube-state-metrics|node-exporter|blackbox-exporter|traefik"} == 0
+            for: 5m
+            labels:
+              severity: warning
+              service: infrastructure
+            annotations:
+              summary: "{{ $labels.job }} is not responding to scrape"
+              description: "Monitoring target {{ $labels.job }} has up==0 for at least 5m."

@@ -1,0 +1,9 @@
+# Prometheus ingress basic auth (secret: k8s.sh secrets). Traefik 3 / k3s.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: prometheus-auth
+  namespace: monitoring
+spec:
+  basicAuth:
+    secret: prometheus-basic-auth
