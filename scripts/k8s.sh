@@ -23,7 +23,7 @@ usage() {
 Commands:
   env-check          Verify kubectl and envsubst; load .env
   secrets            Create/update immich + monitoring secrets (incl. Alertmanager Traefik basic auth)
-  apply all|immich|immich-backup|monitoring   Kustomize + envsubst + kubectl apply
+  apply all|immich|immich-backup|monitoring   Kustomize + envsubst + kubectl apply (server-side; large ConfigMaps)
   deploy all            secrets + apply all (first-time convenience)
   diff all|immich|immich-backup|monitoring   Preview changes
   delete immich|monitoring     Delete namespace (destructive)
@@ -82,23 +82,29 @@ kustomize_render() {
   kubectl kustomize "${dir}" | envsubst "${ENV_SUBST_FORMAT}"
 }
 
+# Server-side apply avoids kubectl.kubernetes.io/last-applied-configuration growing past the
+# 256KiB annotation limit (large Grafana dashboard ConfigMaps from kustomize fail otherwise).
+apply_kustomize_stream() {
+  kubectl apply --server-side --force-conflicts --field-manager=home-server-kustomize -f -
+}
+
 apply_stack() {
   local target="$1"
   require_domain_vars
   case "${target}" in
     all)
       require_backup_s3_env
-      kustomize_render "${ROOT}/kubernetes" | kubectl apply -f -
+      kustomize_render "${ROOT}/kubernetes" | apply_kustomize_stream
       ;;
     immich)
-      kustomize_render "${ROOT}/kubernetes/immich" | kubectl apply -f -
+      kustomize_render "${ROOT}/kubernetes/immich" | apply_kustomize_stream
       ;;
     immich-backup)
       require_backup_s3_env
-      kustomize_render "${ROOT}/kubernetes/immich-backup" | kubectl apply -f -
+      kustomize_render "${ROOT}/kubernetes/immich-backup" | apply_kustomize_stream
       ;;
     monitoring)
-      kustomize_render "${ROOT}/kubernetes/monitoring" | kubectl apply -f -
+      kustomize_render "${ROOT}/kubernetes/monitoring" | apply_kustomize_stream
       ;;
     *)
       echo "Unknown target: ${target}" >&2

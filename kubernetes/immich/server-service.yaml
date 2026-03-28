@@ -7,7 +7,8 @@ spec:
   selector:
     app: immich-server
   ports:
-    - port: 2283
+    - name: http
+      port: 2283
       targetPort: 2283
     - name: metrics
       port: 8081
