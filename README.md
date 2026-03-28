@@ -36,13 +36,13 @@ cp kubernetes/.env.example kubernetes/.env
 
 Edit **at least**:
 
-| Area              | Variables                                                                                                                                              |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Ingress / URLs    | `IMMICH_DOMAIN`, `IMMICH_PUBLIC_URL`, `GRAFANA_DOMAIN`, `GRAFANA_ROOT_URL`, `PROMETHEUS_DOMAIN`, `ALERTS_DOMAIN`                                       |
-| Secrets           | `IMMICH_DB_PASSWORD`, `GRAFANA_ADMIN_USER`, `GRAFANA_ADMIN_PASSWORD`                                                                                   |
-| S3 backups        | `BACKUP_S3_BUCKET`, `BACKUP_S3_PREFIX`, `AWS_REGION` — plus `BACKUP_S3_ACCESS_KEY_ID` / `BACKUP_S3_SECRET_ACCESS_KEY` for `k8s.sh secrets` (see below) |
-| Cloudflare Tunnel | `CLOUDFLARE_TUNNEL_TOKEN` (from Zero Trust → Tunnels → install token) and `CLOUDFLARE_TUNNEL_ORIGIN` (`http://127.0.0.1:80` with default k3s Traefik)  |
-| Optional metrics  | `CLOUDFLARE_EXPORTER_API_TOKEN`, `CLOUDFLARE_ACCOUNT_IDS` for Grafana/Prometheus Cloudflare Worker metrics                                             |
+| Area              | Variables                                                                                                                                                                           |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ingress / URLs    | `IMMICH_DOMAIN`, `IMMICH_PUBLIC_URL`, `GRAFANA_DOMAIN`, `GRAFANA_ROOT_URL`, `PROMETHEUS_DOMAIN`, `ALERTS_DOMAIN`                                                                    |
+| Secrets           | `IMMICH_DB_PASSWORD`, `GRAFANA_ADMIN_USER`, `GRAFANA_ADMIN_PASSWORD`, `ALERTS_BASIC_AUTH_USER`, `ALERTS_BASIC_AUTH_PASSWORD` (Traefik basic auth on `ALERTS_DOMAIN` / Alertmanager) |
+| S3 backups        | `BACKUP_S3_BUCKET`, `BACKUP_S3_PREFIX`, `AWS_REGION` — plus `BACKUP_S3_ACCESS_KEY_ID` / `BACKUP_S3_SECRET_ACCESS_KEY` for `k8s.sh secrets` (see below)                              |
+| Cloudflare Tunnel | `CLOUDFLARE_TUNNEL_TOKEN` (from Zero Trust → Tunnels → install token) and `CLOUDFLARE_TUNNEL_ORIGIN` (`http://127.0.0.1:80` with default k3s Traefik)                               |
+| Optional metrics  | `CLOUDFLARE_EXPORTER_API_TOKEN`, `CLOUDFLARE_ACCOUNT_IDS` for Grafana/Prometheus Cloudflare Worker metrics                                                                          |
 
 Domains in `.env` must match what you configure in Cloudflare (tunnel hostnames and DNS).
 
@@ -56,7 +56,7 @@ From the repo root, with `kubectl` and `envsubst` available:
 ./scripts/k8s.sh apply all       # immich + immich-backup + monitoring (requires backup S3 vars)
 ```
 
-Or first-time shortcut:
+or
 
 ```bash
 ./scripts/k8s.sh deploy all
@@ -66,7 +66,7 @@ Or first-time shortcut:
 
 - `./scripts/k8s.sh apply immich` — Immich stack only (no backup CronJob unless you apply that separately).
 - `./scripts/k8s.sh apply immich-backup` — Postgres dump CronJob (needs S3 env in `.env`).
-- `./scripts/k8s.sh apply monitoring` — Prometheus, Grafana, Alertmanager, optional Cloudflare exporter.
+- `./scripts/k8s.sh apply monitoring` — Prometheus (scrapes **Traefik** in `kube-system:9100`, **immich-server** `:8081/metrics` when telemetry is enabled), Grafana, Alertmanager, **blackbox-exporter** (HTTPS probes), optional Cloudflare exporter.
 
 Use `./scripts/k8s.sh diff all` to preview manifests.
 
@@ -90,13 +90,13 @@ Traffic must reach **Traefik on the node** at `CLOUDFLARE_TUNNEL_ORIGIN` (defaul
 
 For **each** published application (Immich, Grafana, etc.):
 
-| Field | Value |
-| ----- | ----- |
-| **Subdomain** | The part before your zone (e.g. for `photos.example.com` use `photos`; for `images.example.com` use `images`). Must match how you split `IMMICH_DOMAIN` / `GRAFANA_DOMAIN` / … |
-| **Domain** | Your Cloudflare zone (e.g. `example.com`) |
-| **Path** | Leave **empty** unless you intentionally want a path prefix |
-| **Service type** | **HTTP** |
-| **Service URL** | **`http://127.0.0.1:80`** (same as `CLOUDFLARE_TUNNEL_ORIGIN`; `http://localhost:80` is equivalent) |
+| Field            | Value                                                                                                                                                                                                                    |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Subdomain**    | For Immich use **`photos`** if the app is at **`photos.lhowsam.com`** (subdomain + zone must match **`IMMICH_DOMAIN`** in `kubernetes/.env` and the Traefik host — do not use `images` if your tunnel/DNS use `photos`). |
+| **Domain**       | Your Cloudflare zone (e.g. `example.com`)                                                                                                                                                                                |
+| **Path**         | Leave **empty** unless you intentionally want a path prefix                                                                                                                                                              |
+| **Service type** | **HTTP**                                                                                                                                                                                                                 |
+| **Service URL**  | **`http://127.0.0.1:80`** (same as `CLOUDFLARE_TUNNEL_ORIGIN`; `http://localhost:80` is equivalent)                                                                                                                      |
 
 Use the **same** service URL for every hostname. **Do not** point the tunnel at Immich’s container port **`2283`** — Traefik listens on **port 80** on the node and routes to the correct backend using the **`Host`** header from the public hostname you configured.
 
@@ -112,17 +112,17 @@ Repeat the published application once per hostname (Immich, Grafana, Prometheus,
 
 ### Immich mobile app
 
-Use **`https://<IMMICH_DOMAIN>`** as the server URL (same as `IMMICH_PUBLIC_URL`). Do not rely on the raw VPS IP/port when using the tunnel and `allow_public_http = false`.
+Use **`https://<IMMICH_DOMAIN>`** as the server URL (same as `IMMICH_PUBLIC_URL`). This repo’s example uses **`photos.lhowsam.com`**, not `images.*`, so the tunnel published hostname, DNS, `.env`, and app must all agree on **`photos`**. Do not rely on the raw VPS IP/port when using the tunnel and `allow_public_http = false`.
 
 ## 6. What gets installed
 
-| Component                            | Namespace    | Notes                                                                |
-| ------------------------------------ | ------------ | -------------------------------------------------------------------- |
-| Immich (server, Postgres, Redis, ML) | `immich`     | Ingress hostname `IMMICH_DOMAIN`                                     |
-| Immich DB backup CronJob             | `immich`     | Weekly `pg_dump` → S3                                                |
-| Library backup                       | `immich`     | Sidecar on `immich-server`: weekly `aws s3 sync` → `s3://…/library/` |
-| Prometheus, Grafana, Alertmanager    | `monitoring` | Separate ingress hostnames                                           |
-| Cloudflare exporter (optional)       | `monitoring` | Needs `CLOUDFLARE_EXPORTER_API_TOKEN` in `k8s.sh secrets`            |
+| Component                            | Namespace    | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| ------------------------------------ | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Immich (server, Postgres, Redis, ML) | `immich`     | Traefik `IngressRoute` for `IMMICH_DOMAIN`; rate limit on `/api/auth` + `/api/oauth`; **`IMMICH_TELEMETRY_INCLUDE=all`** in `immich-env` exposes **Prometheus metrics on port 8081** ([Immich monitoring](https://docs.immich.app/features/monitoring))                                                                                                                                                                                                                                                                   |
+| Immich DB backup CronJob             | `immich`     | Weekly `pg_dump` → S3                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| Library backup                       | `immich`     | Sidecar on `immich-server`: weekly `aws s3 sync` → `s3://…/library/`                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Prometheus, Grafana, Alertmanager    | `monitoring` | Separate ingress hostnames; scrapes **Immich** metrics (`immich-server.immich:8081`) with labels expected by community dashboards; **node-exporter**, **kube-state-metrics**, **blackbox-exporter**; cAdvisor via API server for [K8S dashboard 15661](https://grafana.com/grafana/dashboards/15661-k8s-dashboard-en-20250125/); Grafana **Applications**: [Immich Overview 22555](https://grafana.com/grafana/dashboards/22555-immich-overview/); **Infrastructure**: Node Exporter, kube-state-metrics, Blackbox, 15661 |
+| Cloudflare exporter (optional)       | `monitoring` | Needs `CLOUDFLARE_EXPORTER_API_TOKEN` in `k8s.sh secrets`                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 
 ## 7. Operations (reference)
 

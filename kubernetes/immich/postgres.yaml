@@ -7,6 +7,8 @@ metadata:
     app: immich-database
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: immich-database
@@ -17,7 +19,7 @@ spec:
     spec:
       containers:
         - name: immich-postgres
-          image: ghcr.io/immich-app/postgres:14-vector
+          image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5432
@@ -39,6 +41,8 @@ spec:
                   key: DB_DATABASE_NAME
           args:
             - -c
+            - shared_preload_libraries=vchord
+            - -c
             - max_connections=120
             - -c
             - shared_buffers=256MB
@@ -56,8 +60,8 @@ spec:
               subPath: postgres
           resources:
             requests:
-              cpu: 500m
-              memory: 1Gi
+              cpu: 250m
+              memory: 512Mi
             limits:
               cpu: "2"
               memory: 2Gi

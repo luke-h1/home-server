@@ -14,6 +14,9 @@
 #   K3S_CHANNEL=stable|latest|... — INSTALL_K3S_CHANNEL (default stable)
 #   EXTRA_K3S_EXEC                — extra args appended to k3s server (quoted string)
 #   SKIP_K3S_INSTALL=1|0          — skip k3s curl installer (default 0)
+#   SETUP_SWAP=1|0                — create persistent swap file (default 1)
+#   SWAP_SIZE_GB=N                — swap file size in GiB (default 8)
+#   SWAP_FILE=/path               — swap file path (default /swapfile)
 
 set -euo pipefail
 
@@ -27,6 +30,9 @@ set -euo pipefail
 : "${K3S_CHANNEL:=stable}"
 : "${EXTRA_K3S_EXEC:=}"
 : "${SKIP_K3S_INSTALL:=0}"
+: "${SETUP_SWAP:=1}"
+: "${SWAP_SIZE_GB:=8}"
+: "${SWAP_FILE:=/swapfile}"
 
 require_root() {
   if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then
@@ -72,6 +78,18 @@ EOF
     systemctl enable fail2ban
     systemctl start fail2ban
   fi
+}
+
+setup_swap() {
+  [[ "${SETUP_SWAP}" == "1" ]] || {
+    echo "SETUP_SWAP=0: skipping swap file setup."
+    return 0
+  }
+
+  local repo_root
+  repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+  export SWAP_SIZE_GB SWAP_FILE
+  bash "${repo_root}/scripts/setup-swap.sh"
 }
 
 install_zsh_for_root() {
@@ -262,6 +280,7 @@ main() {
   require_root
   apt_update_install
   harden_baseline
+  setup_swap
   install_zsh_for_root
   harden_ssh_optional
   install_k3s
@@ -272,6 +291,9 @@ main() {
 
   echo ""
   echo "Done."
+  if [[ "${SETUP_SWAP}" == "1" ]]; then
+    echo "- swap: ${SWAP_FILE} (${SWAP_SIZE_GB}GiB target) — swapon --show; free -h"
+  fi
   echo "- k3s: systemctl status k3s"
   if [[ "${INSTALL_ZSH}" == "1" ]]; then
     echo "- shell: root uses zsh; KUBECONFIG + kubectl completion in /root/.zshrc"

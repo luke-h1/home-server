@@ -20,7 +20,7 @@ spec:
         fsGroup: 0
       initContainers:
         - name: postgresql-isready
-          image: ghcr.io/immich-app/postgres:14-vector
+          image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0
           imagePullPolicy: IfNotPresent
           env:
             - name: POSTGRES_USER
@@ -43,6 +43,8 @@ spec:
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 2283
+            - name: metrics
+              containerPort: 8081
           env:
             - name: DB_PASSWORD
               valueFrom:
@@ -72,8 +74,8 @@ spec:
               subPath: library
           resources:
             requests:
-              cpu: "1"
-              memory: 1Gi
+              cpu: 400m
+              memory: 768Mi
             limits:
               cpu: "3"
               memory: 3Gi
@@ -130,8 +132,8 @@ spec:
               subPath: library
           resources:
             requests:
-              cpu: 100m
-              memory: 128Mi
+              cpu: 50m
+              memory: 64Mi
             limits:
               cpu: "2"
               memory: 512Mi

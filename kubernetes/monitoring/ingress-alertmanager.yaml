@@ -5,6 +5,7 @@ metadata:
   namespace: monitoring
   annotations:
     kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/router.middlewares: monitoring-alertmanager-auth@kubernetescrd
 spec:
   rules:
     - host: "${ALERTS_DOMAIN}"

@@ -7,6 +7,8 @@ metadata:
     app: prometheus
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: prometheus
@@ -15,6 +17,8 @@ spec:
       labels:
         app: prometheus
     spec:
+      serviceAccountName: prometheus
+      automountServiceAccountToken: true
       containers:
         - name: prometheus
           image: prom/prometheus:v2.53.0
@@ -33,8 +37,8 @@ spec:
               mountPath: /prometheus
           resources:
             requests:
-              cpu: 300m
-              memory: 768Mi
+              cpu: 200m
+              memory: 384Mi
             limits:
               cpu: "1"
               memory: 1536Mi

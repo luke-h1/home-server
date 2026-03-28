@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-providers
+  namespace: monitoring
+data:
+  providers.yaml: |
+    apiVersion: 1
+    providers:
+      - name: Cloudflare
+        folder: Cloudflare
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 60
+        options:
+          path: /var/lib/grafana/dashboards/cloudflare
+      - name: Infrastructure
+        folder: Infrastructure
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 120
+        options:
+          path: /var/lib/grafana/dashboards/infrastructure
+      - name: Applications
+        folder: Applications
+        type: file
+        disableDeletion: false
+        updateIntervalSeconds: 120
+        options:
+          path: /var/lib/grafana/dashboards/applications

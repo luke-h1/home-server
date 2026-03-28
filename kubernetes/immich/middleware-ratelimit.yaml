@@ -1,0 +1,14 @@
+# Brute-force mitigation for Immich login/OAuth. Per-client key is CF-Connecting-IP
+# (set by Cloudflare); ensure traffic still goes through Cloudflare Tunnel to the origin.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: immich-auth-ratelimit
+  namespace: immich
+spec:
+  rateLimit:
+    average: 15
+    period: 1m
+    burst: 10
+    sourceCriterion:
+      requestHeaderName: CF-Connecting-IP

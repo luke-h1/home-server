@@ -7,6 +7,8 @@ metadata:
     app: grafana
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: grafana
@@ -44,10 +46,14 @@ spec:
               mountPath: /etc/grafana/provisioning/dashboards
             - name: dashboard-cloudflare
               mountPath: /var/lib/grafana/dashboards/cloudflare
+            - name: dashboard-infra
+              mountPath: /var/lib/grafana/dashboards/infrastructure
+            - name: dashboard-apps
+              mountPath: /var/lib/grafana/dashboards/applications
           resources:
             requests:
-              cpu: 150m
-              memory: 384Mi
+              cpu: 100m
+              memory: 256Mi
             limits:
               cpu: "1"
               memory: 768Mi
@@ -60,7 +66,13 @@ spec:
             name: grafana-datasource
         - name: dashboard-providers
           configMap:
-            name: grafana-dashboard-provider-cloudflare
+            name: grafana-dashboard-providers
         - name: dashboard-cloudflare
           configMap:
             name: grafana-dashboard-cloudflare-workers
+        - name: dashboard-infra
+          configMap:
+            name: grafana-dashboard-infra
+        - name: dashboard-apps
+          configMap:
+            name: grafana-dashboard-apps

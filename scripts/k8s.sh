@@ -22,7 +22,7 @@ usage() {
   echo "
 Commands:
   env-check          Verify kubectl and envsubst; load .env
-  secrets            Create/update immich-secrets and grafana-admin from .env
+  secrets            Create/update immich + monitoring secrets (incl. Alertmanager Traefik basic auth)
   apply all|immich|immich-backup|monitoring   Kustomize + envsubst + kubectl apply
   deploy all            secrets + apply all (first-time convenience)
   diff all|immich|immich-backup|monitoring   Preview changes
@@ -143,6 +143,16 @@ cmd_secrets() {
     --from-literal=admin-user="${GRAFANA_ADMIN_USER}" \
     --from-literal=admin-password="${GRAFANA_ADMIN_PASSWORD}" \
     --dry-run=client -o yaml | kubectl apply -f -
+
+  : "${ALERTS_BASIC_AUTH_USER:?Set ALERTS_BASIC_AUTH_USER in ${ENV_FILE} (Traefik basic auth for ${ALERTS_DOMAIN:-alerts})}"
+  : "${ALERTS_BASIC_AUTH_PASSWORD:?Set ALERTS_BASIC_AUTH_PASSWORD in ${ENV_FILE}}"
+  local alerts_hash
+  alerts_hash="$(openssl passwd -apr1 "${ALERTS_BASIC_AUTH_PASSWORD}")"
+  kubectl create secret generic alertmanager-basic-auth \
+    -n monitoring \
+    --from-literal=users="${ALERTS_BASIC_AUTH_USER}:${alerts_hash}" \
+    --dry-run=client -o yaml | kubectl apply -f -
+  echo "alertmanager-basic-auth applied (HTTP basic auth on Alertmanager ingress / ${ALERTS_DOMAIN:-alerts})."
 
   if [[ -n "${BACKUP_S3_ACCESS_KEY_ID:-}" && -n "${BACKUP_S3_SECRET_ACCESS_KEY:-}" ]]; then
     kubectl create secret generic backup-s3-credentials \

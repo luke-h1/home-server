@@ -8,22 +8,39 @@ configMapGenerator:
   - name: grafana-dashboard-cloudflare-workers
     files:
       - dashboards/cloudflare-workers.json
+  - name: grafana-dashboard-apps
+    files:
+      - dashboards/immich-overview.json
+  - name: grafana-dashboard-infra
+    files:
+      - dashboards/node-exporter-full.json
+      - dashboards/kube-state-metrics.json
+      - dashboards/blackbox-exporter.json
+      - dashboards/k8s-dashboard-15661.json
+      - dashboards/traefik-prometheus.json
 resources:
   - namespace.yaml
   - pvc-prometheus.yaml
   - pvc-grafana.yaml
   - pvc-alertmanager.yaml
+  - prometheus-rbac.yaml
   - prometheus-config.yaml
   - prometheus.yaml
   - prometheus-service.yaml
+  - kube-state-metrics-clusterrole.yaml
+  - kube-state-metrics.yaml
+  - node-exporter.yaml
+  - blackbox-config.yaml
+  - blackbox-exporter.yaml
   - cloudflare-exporter.yaml
   - alertmanager-config.yaml
   - alertmanager.yaml
   - alertmanager-service.yaml
   - grafana-datasource.yaml
-  - grafana-cloudflare-dashboard-provider.yaml
+  - grafana-dashboard-providers.yaml
   - grafana.yaml
   - grafana-service.yaml
   - ingress-grafana.yaml
   - ingress-prometheus.yaml
+  - middleware-alertmanager-auth.yaml
   - ingress-alertmanager.yaml

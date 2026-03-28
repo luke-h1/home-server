@@ -1,0 +1,22 @@
+# Replaces Ingress so we can rate-limit only auth/OAuth paths (see middleware-ratelimit.yaml).
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: immich
+  namespace: immich
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`${IMMICH_DOMAIN}`) && (PathPrefix(`/api/auth`) || PathPrefix(`/api/oauth`))
+      priority: 100
+      middlewares:
+        - name: immich-auth-ratelimit
+      services:
+        - name: immich-server
+          port: 2283
+    - match: Host(`${IMMICH_DOMAIN}`)
+      priority: 10
+      services:
+        - name: immich-server
+          port: 2283
