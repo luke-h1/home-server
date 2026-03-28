@@ -1,20 +1,12 @@
 #!/usr/bin/env bash
-# Cloudflare Tunnel helpers: token-based install (dashboard) or file-based config for custom domains.
-# Domains must match kubernetes/.env (IMMICH_DOMAIN, GRAFANA_DOMAIN, …).
+# Cloudflare Tunnel: install token from Zero Trust + cloudflared service (see README).
+# Domains must match kubernetes/.env (IMMICH_DOMAIN, GRAFANA_DOMAIN, …); routes are configured in the tunnel UI.
 #
 # Docs: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/
 #
-# Quick path (recommended):
-#   Zero Trust → Networks → Tunnels → create tunnel → copy token
+#   Zero Trust → Networks → Tunnels → create tunnel → copy install token
+#   Put CLOUDFLARE_TUNNEL_TOKEN in kubernetes/.env
 #   sudo ./scripts/cloudflare-tunnel.sh install-token
-#
-# File-based (this repo template):
-#   cloudflared tunnel login
-#   cloudflared tunnel create home-server
-#   Set CLOUDFLARE_TUNNEL_ID and CLOUDFLARE_TUNNEL_CREDENTIALS_FILE in kubernetes/.env
-#   sudo ./scripts/cloudflare-tunnel.sh write-config
-#   sudo cloudflared --config /etc/cloudflared/config.yml tunnel run
-#   # or: sudo cloudflared service install (after config + credentials in place)
 
 set -euo pipefail
 
@@ -27,10 +19,10 @@ ENV_SUBST_CF='${IMMICH_DOMAIN}${GRAFANA_DOMAIN}${PROMETHEUS_DOMAIN}${ALERTS_DOMA
 usage() {
   cat <<'EOF'
 Usage:
-  cloudflare-tunnel.sh install-token   Install systemd service (needs CLOUDFLARE_TUNNEL_TOKEN in .env, run as root)
-  cloudflare-tunnel.sh write-config    Write /etc/cloudflared/config.yml from template + .env (root)
-  cloudflare-tunnel.sh render-config   Print config to stdout (no root)
-  cloudflare-tunnel.sh print-dns-hints Show CNAME-style hints for your zones
+  cloudflare-tunnel.sh install-token   Install cloudflared systemd service (CLOUDFLARE_TUNNEL_TOKEN in .env; root)
+  cloudflare-tunnel.sh print-dns-hints List hostnames from .env for tunnel / DNS
+  cloudflare-tunnel.sh write-config    Optional: write /etc/cloudflared/config.yml from kubernetes/cloudflared-config.yml.tpl
+  cloudflare-tunnel.sh render-config   Optional: print that config to stdout
 
 Requires kubernetes/.env (copy from kubernetes/.env.example).
 EOF
