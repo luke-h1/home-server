@@ -45,7 +45,3 @@ resources:
   - ingress-prometheus.yaml
   - middleware-alertmanager-auth.yaml
   - ingress-alertmanager.yaml
-  - uptime-kuma-pvc.yaml
-  - uptime-kuma-deployment.yaml
-  - uptime-kuma-service.yaml
-  - uptime-kuma-ingress.yaml

@@ -1,7 +1,5 @@
 # home-server
 
-k3s on a VPS: Immich, Prometheus/Grafana/Alertmanager, Uptime Kuma, S3 backups, Cloudflare Tunnel in front of Traefik.
-
 ## Contents
 
 - [Terraform](#terraform) — VPS
@@ -42,7 +40,7 @@ cp kubernetes/.env.example kubernetes/.env
 
 Fill in at least:
 
-- **URLs:** `IMMICH_DOMAIN`, `IMMICH_PUBLIC_URL`, `GRAFANA_DOMAIN`, `GRAFANA_ROOT_URL`, `PROMETHEUS_DOMAIN`, `ALERTS_DOMAIN`, `UPTIME_KUMA_DOMAIN`
+- **URLs:** `IMMICH_DOMAIN`, `IMMICH_PUBLIC_URL`, `GRAFANA_DOMAIN`, `GRAFANA_ROOT_URL`, `PROMETHEUS_DOMAIN`, `ALERTS_DOMAIN`
 - **Secrets:** `IMMICH_DB_PASSWORD`, `GRAFANA_ADMIN_*`, `ALERTS_BASIC_AUTH_*` (Alertmanager ingress)
 - **S3 backups:** `BACKUP_S3_BUCKET`, `BACKUP_S3_PREFIX`, `AWS_REGION`, optional `BACKUP_S3_ACCESS_KEY_ID` / `BACKUP_S3_SECRET_ACCESS_KEY` for `./scripts/k8s.sh secrets`
 - **Tunnel:** `CLOUDFLARE_TUNNEL_TOKEN`, `CLOUDFLARE_TUNNEL_ORIGIN` (default `http://127.0.0.1:80` → Traefik)
@@ -53,13 +51,11 @@ Domains in `.env` should match tunnel public hostnames + DNS.
 ```bash
 ./scripts/k8s.sh env-check
 ./scripts/k8s.sh secrets
-./scripts/k8s.sh apply all          # needs S3 vars; includes immich, backup cron, monitoring (incl. Uptime Kuma)
+./scripts/k8s.sh apply all          # needs S3 vars; includes immich, backup cron, monitoring
 # or: ./scripts/k8s.sh deploy all
 ```
 
-Partial: `apply immich` | `apply immich-backup` | `apply monitoring` (Prometheus stack + Uptime Kuma). Preview: `diff all`.
-
-If you previously used the `uptime-kuma` namespace, re-apply `monitoring` then remove the old namespace/PVC once you are done with that data (`kubectl delete namespace uptime-kuma`).
+Partial: `apply immich` | `apply immich-backup` | `apply monitoring` (Prometheus stack). Preview: `diff all`.
 
 Weekly **Friday 00:00 UTC:** Postgres dump to S3 + library `aws s3 sync` from the `immich-server` sidecar (RWO PVC).
 
@@ -80,22 +76,22 @@ Optional: `render-config` / `write-config` from `kubernetes/cloudflared-config.y
 
 ## Stacks
 
-| Namespace     | What                                                                                                                                                                                                                                                 |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `immich`      | Immich (Traefik `IngressRoute`, auth rate limit), Postgres, Redis, ML (HPA max 1 by default), library S3 sidecar; weekly `pg_dump` CronJob → S3                                                                                                      |
-| `monitoring`  | Prometheus, Grafana, Alertmanager (basic auth on alerts ingress), node-exporter, kube-state-metrics, blackbox, optional Cloudflare exporter, [fail2ban-exporter](https://github.com/hectorjsmith/fail2ban-prometheus-exporter) (needs host fail2ban), [Uptime Kuma](https://github.com/louislam/uptime-kuma) (SQLite, RWO PVC, ingress `UPTIME_KUMA_DOMAIN`) |
+| Namespace    | What                                                                                                                                                                                                                                                 |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `immich`     | Immich (Traefik `IngressRoute`, auth rate limit), Postgres, Redis, ML (HPA max 1 by default), library S3 sidecar; weekly `pg_dump` CronJob → S3                                                                                                      |
+| `monitoring` | Prometheus, Grafana, Alertmanager (basic auth on alerts ingress), node-exporter, kube-state-metrics, blackbox, optional Cloudflare exporter, [fail2ban-exporter](https://github.com/hectorjsmith/fail2ban-prometheus-exporter) (needs host fail2ban) |
 
 Grafana dashboards include community Immich / k8s / Traefik JSON plus a small **Server security signals** board (`f2b_*` + node/kube metrics; not raw auth logs).
 
 ## Scripts
 
-| Command                                                           | Purpose                                                              |
-| ----------------------------------------------------------------- | -------------------------------------------------------------------- |
-| `./scripts/k8s.sh restart`                                        | Rollout restart deployments in `immich`, `monitoring` (includes Uptime Kuma) |
-| `./scripts/k8s.sh backup-suspend` / `backup-resume`               | Immich pgdump CronJob                                                |
-| `./scripts/restore-immich-from-s3.sh`                             | Restore DB from S3 (see script header)                               |
-| `./scripts/snapshot-k3s-s3.sh`                                    | k3s etcd snapshot → S3 (server, root)                                |
-| `./scripts/k8s.sh delete immich` \| `monitoring`                  | Destructive (monitoring deletes Uptime Kuma too)                     |
+| Command                                             | Purpose                                               |
+| --------------------------------------------------- | ----------------------------------------------------- |
+| `./scripts/k8s.sh restart`                          | Rollout restart deployments in `immich`, `monitoring` |
+| `./scripts/k8s.sh backup-suspend` / `backup-resume` | Immich pgdump CronJob                                 |
+| `./scripts/restore-immich-from-s3.sh`               | Restore DB from S3 (see script header)                |
+| `./scripts/snapshot-k3s-s3.sh`                      | k3s etcd snapshot → S3 (server, root)                 |
+| `./scripts/k8s.sh delete immich` \| `monitoring`    | Destructive                                           |
 
 More flags: `./scripts/k8s.sh` (no args) or read `k8s.sh` usage block.
 
@@ -106,5 +102,4 @@ curl -sS -o /dev/null -w '%{http_code}\n' "https://<IMMICH_DOMAIN>/api/server/pi
 curl -sS -o /dev/null -w '%{http_code}\n' "https://<GRAFANA_DOMAIN>/api/health"
 curl -sS -o /dev/null -w '%{http_code}\n' "https://<PROMETHEUS_DOMAIN>/-/ready"
 curl -sS -o /dev/null -w '%{http_code}\n' -u 'USER:PASS' "https://<ALERTS_DOMAIN>/-/healthy"
-curl -sS -L -o /dev/null -w '%{http_code}\n' "https://<UPTIME_KUMA_DOMAIN>/"
 ```

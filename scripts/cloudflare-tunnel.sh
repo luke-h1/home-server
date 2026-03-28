@@ -8,7 +8,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENV_FILE="${K8S_ENV_FILE:-${ROOT}/kubernetes/.env}"
 TPL="${ROOT}/kubernetes/cloudflared-config.yml.tpl"
 
-ENV_SUBST_CF='${IMMICH_DOMAIN}${GRAFANA_DOMAIN}${PROMETHEUS_DOMAIN}${ALERTS_DOMAIN}${UPTIME_KUMA_DOMAIN}${CLOUDFLARE_TUNNEL_ORIGIN}${CLOUDFLARE_TUNNEL_ID}${CLOUDFLARE_TUNNEL_CREDENTIALS_FILE}'
+ENV_SUBST_CF='${IMMICH_DOMAIN}${GRAFANA_DOMAIN}${PROMETHEUS_DOMAIN}${ALERTS_DOMAIN}${CLOUDFLARE_TUNNEL_ORIGIN}${CLOUDFLARE_TUNNEL_ID}${CLOUDFLARE_TUNNEL_CREDENTIALS_FILE}'
 
 usage() {
   cat <<'EOF'
@@ -45,7 +45,6 @@ require_domains() {
   : "${GRAFANA_DOMAIN:?}"
   : "${PROMETHEUS_DOMAIN:?}"
   : "${ALERTS_DOMAIN:?}"
-  : "${UPTIME_KUMA_DOMAIN:?}"
   : "${CLOUDFLARE_TUNNEL_ORIGIN:?}"
 }
 
@@ -104,7 +103,6 @@ cmd_print_dns_hints() {
   echo "  - ${GRAFANA_DOMAIN}"
   echo "  - ${PROMETHEUS_DOMAIN}"
   echo "  - ${ALERTS_DOMAIN}"
-  echo "  - ${UPTIME_KUMA_DOMAIN}"
   echo "Origin service in tunnel UI should match Traefik on the node, e.g. ${CLOUDFLARE_TUNNEL_ORIGIN:-http://127.0.0.1:80}"
 }
 
