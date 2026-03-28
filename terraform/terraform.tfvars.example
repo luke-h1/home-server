@@ -1,0 +1,20 @@
+# Copy to envs/prod.tfvars
+
+hcloud_token = "YOUR_HETZNER_CLOUD_API_TOKEN"
+
+ssh_public_key_path = "~/.ssh/id_ed25519.pub"
+
+# Restrict SSH to your public IP (/32). Empty list will allow SSH from anywhere.
+ssh_allowed_cidrs = [
+  # "203.0.113.50/32",
+]
+
+# expose apps only via Cloudflare Tunnel (scripts/setup-server).
+allow_public_http = false
+
+server_name     = "home-server"
+server_location = "nbg1"
+environment     = "production"
+
+attach_data_volume = false
+data_volume_gb     = 50

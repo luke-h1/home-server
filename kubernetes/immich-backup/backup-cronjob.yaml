@@ -1,0 +1,91 @@
+# Weekly logical backup of Immich Postgres → S3 (custom format), Friday 00:00 UTC.
+# Library images: aws s3 sync from immich-server sidecar same wall time (Fri 00:00 UTC) → s3://.../${BACKUP_S3_PREFIX}/library/
+# Requires: immich-secrets, backup-s3-credentials, scripts/k8s.sh secrets + envsubst vars.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: immich-pgdump-s3
+  namespace: immich
+spec:
+  schedule: "0 0 * * 5"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 4
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      ttlSecondsAfterFinished: 86400
+      template:
+        spec:
+          restartPolicy: OnFailure
+          initContainers:
+            - name: pgdump
+              image: postgres:14-alpine
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: immich-secrets
+                      key: DB_PASSWORD
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -e
+                  pg_dump -h immich-database -U immich -d immich -Fc -f /dump/immich.dump
+                  ls -la /dump
+              volumeMounts:
+                - name: dump
+                  mountPath: /dump
+              resources:
+                requests:
+                  cpu: 200m
+                  memory: 256Mi
+                limits:
+                  cpu: "1"
+                  memory: 512Mi
+          containers:
+            - name: s3-upload
+              image: amazon/aws-cli:2.17.44
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: backup-s3-credentials
+                      key: AWS_ACCESS_KEY_ID
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: backup-s3-credentials
+                      key: AWS_SECRET_ACCESS_KEY
+                - name: AWS_DEFAULT_REGION
+                  value: "${AWS_REGION}"
+                - name: BUCKET
+                  value: "${BACKUP_S3_BUCKET}"
+                - name: PREFIX
+                  value: "${BACKUP_S3_PREFIX}"
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -e
+                  ts="$(date -u +%Y%m%dT%H%MZ)"
+                  key="${PREFIX}/immich-${ts}.dump"
+                  aws s3 cp /dump/immich.dump "s3://${BUCKET}/${key}"
+                  echo "Uploaded s3://${BUCKET}/${key}"
+              volumeMounts:
+                - name: dump
+                  mountPath: /dump
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                limits:
+                  cpu: 500m
+                  memory: 256Mi
+          volumes:
+            - name: dump
+              emptyDir:
+                sizeLimit: 6Gi

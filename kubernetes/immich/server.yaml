@@ -1,0 +1,141 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: immich-server
+  namespace: immich
+  labels:
+    app: immich-server
+spec:
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: immich-server
+  template:
+    metadata:
+      labels:
+        app: immich-server
+    spec:
+      securityContext:
+        fsGroup: 0
+      initContainers:
+        - name: postgresql-isready
+          image: ghcr.io/immich-app/postgres:14-vector
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: immich-env
+                  key: DB_USERNAME
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: immich-env
+                  key: DB_DATABASE_NAME
+          command:
+            - /bin/sh
+            - -c
+            - until pg_isready -U immich -d dbname=immich -h immich-database -p 5432; do sleep 2; done
+      containers:
+        - name: immich-server
+          image: ghcr.io/immich-app/immich-server:release
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 2283
+          env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: immich-secrets
+                  key: DB_PASSWORD
+          envFrom:
+            - configMapRef:
+                name: immich-env
+          livenessProbe:
+            httpGet:
+              path: /api/server/ping
+              port: 2283
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /api/server/ping
+              port: 2283
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: library
+              mountPath: /usr/src/app/upload
+              subPath: library
+          resources:
+            requests:
+              cpu: "1"
+              memory: 1Gi
+            limits:
+              cpu: "3"
+              memory: 3Gi
+        # RWO library PVC cannot be mounted by a second pod; sync runs here (same pod) to S3.
+        - name: library-s3-backup
+          image: amazon/aws-cli:2.17.44
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: backup-s3-credentials
+                  key: AWS_ACCESS_KEY_ID
+                  optional: true
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: backup-s3-credentials
+                  key: AWS_SECRET_ACCESS_KEY
+                  optional: true
+            - name: AWS_DEFAULT_REGION
+              value: "${AWS_REGION}"
+            - name: BUCKET
+              value: "${BACKUP_S3_BUCKET}"
+            - name: PREFIX
+              value: "${BACKUP_S3_PREFIX}"
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+              idle_sleep=86400
+              while true; do
+                if [ -z "${BUCKET}" ] || [ -z "${AWS_ACCESS_KEY_ID:-}" ]; then
+                  echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) library-s3-backup idle (set BACKUP_S3_* in .env and backup-s3-credentials secret)"
+                  sleep "$idle_sleep"
+                  continue
+                fi
+                now=$(date -u +%s)
+                target=$(date -u -d 'next Friday 00:00:00' +%s)
+                wait_sec=$((target - now))
+                if [ "$wait_sec" -gt 0 ]; then
+                  echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) library-s3-backup sleeping ${wait_sec}s until Fri 00:00 UTC"
+                  sleep "$wait_sec"
+                fi
+                dest="s3://${BUCKET}/${PREFIX%/}/library/"
+                echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) syncing /media -> ${dest}"
+                aws s3 sync /media "${dest}" --no-progress || echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) sync failed (will retry next Fri 00:00 UTC)"
+              done
+          volumeMounts:
+            - name: library
+              mountPath: /media
+              readOnly: true
+              subPath: library
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: "2"
+              memory: 512Mi
+      volumes:
+        - name: library
+          persistentVolumeClaim:
+            claimName: immich-library-pvc

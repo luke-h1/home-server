@@ -1,0 +1,19 @@
+# Copy to backend.hcl and run: terraform init -backend-config=backend.hcl
+# Use env vars or AWS profile for credentials (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, etc.).
+#
+# For AWS S3, you can omit endpoint and rely on region.
+# For S3-compatible storage (MinIO, Cloudflare R2, etc.), set endpoint and the skip_* / force_path_style flags.
+
+bucket         = "your-terraform-state-bucket"
+key            = "home-server/terraform.tfstate"
+region         = "eu-west-2"
+encrypt        = true
+
+# Often required for non-AWS S3 endpoints:
+skip_credentials_validation = true
+skip_metadata_api_check     = true
+skip_region_validation      = true
+force_path_style            = true
+
+# Uncomment and set for S3-compatible APIs (not needed for AWS):
+# endpoint                    = "https://YOUR_ACCOUNT_ID.r2.cloudflarestorage.com"

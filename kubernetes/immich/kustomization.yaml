@@ -1,0 +1,17 @@
+# Secrets: apply via scripts/k8s.sh secrets
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: immich
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - pvc-db.yaml
+  - pvc-library.yaml
+  - redis.yaml
+  - postgres.yaml
+  - postgres-service.yaml
+  - ml.yaml
+  - ml-service.yaml
+  - server.yaml
+  - server-service.yaml
+  - ingress.yaml

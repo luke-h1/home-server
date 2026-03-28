@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: immich-database
+  namespace: immich
+  labels:
+    app: immich-database
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: immich-database
+  template:
+    metadata:
+      labels:
+        app: immich-database
+    spec:
+      containers:
+        - name: immich-postgres
+          image: ghcr.io/immich-app/postgres:14-vector
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: immich-env
+                  key: DB_USERNAME
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: immich-secrets
+                  key: DB_PASSWORD
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: immich-env
+                  key: DB_DATABASE_NAME
+          args:
+            - -c
+            - max_connections=120
+            - -c
+            - shared_buffers=256MB
+            - -c
+            - effective_cache_size=1GB
+            - -c
+            - maintenance_work_mem=128MB
+            - -c
+            - random_page_cost=1.1
+            - -c
+            - effective_io_concurrency=200
+          volumeMounts:
+            - name: pgdata
+              mountPath: /var/lib/postgresql/data
+              subPath: postgres
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+      volumes:
+        - name: pgdata
+          persistentVolumeClaim:
+            claimName: immich-db-pvc

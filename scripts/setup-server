@@ -1,0 +1,293 @@
+#!/usr/bin/env bash
+
+
+# Usage:  ./scripts/setup-server
+#
+# Environment (all optional):
+#   INSTALL_HELM=1|0              — Helm 3 (default 1)
+#   INSTALL_CLOUDFLARED=1|0       — cloudflared .deb (default 1)
+#   INSTALL_FAIL2BAN=1|0          — fail2ban for sshd (default 1)
+#   HARDEN_BASELINE=1|0           — unattended-upgrades, sysctl, kubectl helpers in shell rc (default 1)
+#   INSTALL_ZSH=1|0               — install zsh and chsh root to zsh (default 1)
+#   HARDEN_SSH=1|0                — disable password SSH if /root/.ssh/authorized_keys exists (default 0)
+#   DISABLE_TRAEFIK=1|0           — pass --disable=traefik to k3s (default 0)
+#   K3S_CHANNEL=stable|latest|... — INSTALL_K3S_CHANNEL (default stable)
+#   EXTRA_K3S_EXEC                — extra args appended to k3s server (quoted string)
+#   SKIP_K3S_INSTALL=1|0          — skip k3s curl installer (default 0)
+
+set -euo pipefail
+
+: "${INSTALL_HELM:=1}"
+: "${INSTALL_CLOUDFLARED:=1}"
+: "${INSTALL_FAIL2BAN:=1}"
+: "${HARDEN_BASELINE:=1}"
+: "${INSTALL_ZSH:=1}"
+: "${HARDEN_SSH:=0}"
+: "${DISABLE_TRAEFIK:=0}"
+: "${K3S_CHANNEL:=stable}"
+: "${EXTRA_K3S_EXEC:=}"
+: "${SKIP_K3S_INSTALL:=0}"
+
+require_root() {
+  if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then
+    echo "Run as root (sudo -i or ssh root@...)." >&2
+    exit 1
+  fi
+}
+
+apt_update_install() {
+  export DEBIAN_FRONTEND=noninteractive
+  apt-get update -y
+  apt-get install -y \
+    ca-certificates \
+    curl \
+    gnupg \
+    git \
+    jq \
+    nfs-common \
+    open-iscsi \
+    bash-completion \
+    gettext-base
+}
+
+harden_baseline() {
+  [[ "${HARDEN_BASELINE}" == "1" ]] || return 0
+
+  apt-get install -y unattended-upgrades
+
+  cat >/etc/apt/apt.conf.d/20auto-upgrades <<'EOF'
+APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Download-Upgradeable-Packages "1";
+APT::Periodic::AutocleanInterval "7";
+APT::Periodic::Unattended-Upgrade "1";
+EOF
+
+  if ! grep -q '^fs.inotify.max_user_instances' /etc/sysctl.conf 2>/dev/null; then
+    echo 'fs.inotify.max_user_instances = 8192' >>/etc/sysctl.conf
+  fi
+  sysctl -p /etc/sysctl.conf 2>/dev/null || true
+
+  if [[ "${INSTALL_FAIL2BAN}" == "1" ]]; then
+    apt-get install -y fail2ban
+    systemctl enable fail2ban
+    systemctl start fail2ban
+  fi
+}
+
+install_zsh_for_root() {
+  [[ "${INSTALL_ZSH}" == "1" ]] || return 0
+
+  apt-get install -y zsh
+
+  local zsh_bin
+  zsh_bin="$(command -v zsh)"
+  if [[ -z "${zsh_bin}" ]]; then
+    echo "zsh not found after apt install." >&2
+    return 1
+  fi
+
+  if ! grep -qxF "${zsh_bin}" /etc/shells 2>/dev/null; then
+    echo "${zsh_bin}" >>/etc/shells
+  fi
+
+  local current_shell
+  current_shell="$(getent passwd root | cut -d: -f7)"
+  if [[ "${current_shell}" != "${zsh_bin}" ]]; then
+    chsh -s "${zsh_bin}" root
+    echo "Root login shell set to zsh (${zsh_bin}). New SSH sessions will use zsh."
+  fi
+}
+
+harden_ssh_optional() {
+  [[ "${HARDEN_SSH}" == "1" ]] || return 0
+  if [[ ! -s /root/.ssh/authorized_keys ]]; then
+    echo "HARDEN_SSH=1 skipped: /root/.ssh/authorized_keys is missing or empty." >&2
+    return 0
+  fi
+
+  install -d -m 0755 /etc/ssh/sshd_config.d
+  cat >/etc/ssh/sshd_config.d/99-hardening-k3s-server.conf <<'EOF'
+# Managed by home-server scripts/setup-server
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PermitRootLogin prohibit-password
+EOF
+
+  if sshd -t 2>/dev/null; then
+    systemctl reload sshd 2>/dev/null || systemctl reload ssh 2>/dev/null || true
+  else
+    echo "sshd -t failed; not reloading sshd." >&2
+  fi
+}
+
+deb_arch() {
+  dpkg --print-architecture
+}
+
+install_k3s() {
+  [[ "${SKIP_K3S_INSTALL}" == "1" ]] && {
+    echo "SKIP_K3S_INSTALL=1: skipping k3s install."
+    return 0
+  }
+
+  if command -v k3s >/dev/null 2>&1; then
+    echo "k3s already installed; skipping curl installer."
+    return 0
+  fi
+
+  local exec_line="server"
+  [[ "${DISABLE_TRAEFIK}" == "1" ]] && exec_line+=" --disable=traefik"
+  [[ -n "${EXTRA_K3S_EXEC}" ]] && exec_line+=" ${EXTRA_K3S_EXEC}"
+
+  export INSTALL_K3S_CHANNEL="${K3S_CHANNEL}"
+  export INSTALL_K3S_EXEC="${exec_line}"
+
+  curl -sfL https://get.k3s.io | sh -
+
+  systemctl enable k3s
+  systemctl start k3s || true
+}
+
+install_helm() {
+  [[ "${INSTALL_HELM}" == "1" ]] || return 0
+  if command -v helm >/dev/null 2>&1; then
+    echo "helm already installed."
+    return 0
+  fi
+
+  local tmp
+  tmp="$(mktemp)"
+  curl -fsSL -o "${tmp}" https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+  chmod 700 "${tmp}"
+  HELM_INSTALL_DIR=/usr/local/bin bash "${tmp}"
+  rm -f "${tmp}"
+}
+
+install_cloudflared() {
+  [[ "${INSTALL_CLOUDFLARED}" == "1" ]] || return 0
+  if command -v cloudflared >/dev/null 2>&1; then
+    echo "cloudflared already installed."
+    return 0
+  fi
+
+  local arch
+  arch="$(deb_arch)"
+  local deb="/tmp/cloudflared-linux-${arch}.deb"
+  curl -fsSL -o "${deb}" "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-${arch}.deb"
+  apt-get install -y "${deb}"
+  rm -f "${deb}"
+}
+
+write_cloudflared_example_config() {
+  [[ "${INSTALL_CLOUDFLARED}" == "1" ]] || return 0
+
+  install -d -m 0700 /etc/cloudflared
+  install -d -m 0700 /root/.cloudflared
+
+  cat >/etc/cloudflared/config.yml.example <<'EOF'
+# Cloudflare Tunnel (copy to /etc/cloudflared/config.yml and adjust).
+# Prerequisites: Zero Trust → Networks → Tunnels → create tunnel, or CLI:
+#   cloudflared tunnel login
+#   cloudflared tunnel create home-server
+# Credentials are written to ~/.cloudflared/<UUID>.json — reference it below.
+#
+# Alternative (quick): dashboard gives a one-line install token:
+#   cloudflared service install <TOKEN>
+# That manages config automatically; you can ignore this file.
+#
+# k3s default Traefik usually listens on the node on ports 80/443; loopback often works:
+tunnel: REPLACE_WITH_TUNNEL_UUID
+credentials-file: /root/.cloudflared/REPLACE_WITH_TUNNEL_UUID.json
+
+ingress:
+  - hostname: app.example.com
+    service: http://127.0.0.1:80
+  - service: http_status:404
+EOF
+  chmod 0644 /etc/cloudflared/config.yml.example
+}
+
+install_kubectl_k_command() {
+  [[ "${HARDEN_BASELINE}" == "1" ]] || return 0
+
+  if [[ -e /usr/local/bin/k ]]; then
+    if ! grep -q 'exec kubectl' /usr/local/bin/k 2>/dev/null; then
+      echo "/usr/local/bin/k already exists; not replacing it." >&2
+      return 0
+    fi
+  fi
+
+  cat >/usr/local/bin/k <<'EOF'
+#!/bin/sh
+exec kubectl "$@"
+EOF
+  chmod 0755 /usr/local/bin/k
+}
+
+kubectl_shell_helpers() {
+  [[ "${HARDEN_BASELINE}" == "1" ]] || return 0
+
+  install_kubectl_k_command
+
+  if [[ "${INSTALL_ZSH}" == "1" ]]; then
+    local zrc="/root/.zshrc"
+    touch "${zrc}"
+    grep -q "home-server setup-server" "${zrc}" 2>/dev/null || {
+      cat >>"${zrc}" <<'EOF'
+
+# home-server setup-server — k is /usr/local/bin/k → kubectl
+export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+if command -v kubectl >/dev/null 2>&1; then
+  source <(kubectl completion zsh)
+  compdef _kubectl k 2>/dev/null || true
+fi
+EOF
+    }
+  else
+    local brc="/root/.bashrc"
+    touch "${brc}"
+    grep -q "home-server setup-server" "${brc}" 2>/dev/null || {
+      cat >>"${brc}" <<'EOF'
+
+# home-server setup-server — k is /usr/local/bin/k → kubectl
+export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+source <(kubectl completion bash 2>/dev/null) || true
+complete -o default -F __start_kubectl k 2>/dev/null || true
+EOF
+    }
+  fi
+}
+
+main() {
+  require_root
+  apt_update_install
+  harden_baseline
+  install_zsh_for_root
+  harden_ssh_optional
+  install_k3s
+  install_helm
+  install_cloudflared
+  write_cloudflared_example_config
+  kubectl_shell_helpers
+
+  echo ""
+  echo "Done."
+  echo "- k3s: systemctl status k3s"
+  if [[ "${INSTALL_ZSH}" == "1" ]]; then
+    echo "- shell: root uses zsh; KUBECONFIG + kubectl completion in /root/.zshrc"
+  else
+    echo "- kubeconfig: KUBECONFIG + kubectl completion in /root/.bashrc"
+  fi
+  echo ""
+  echo "Cloudflare Tunnel (no public 80/443 on the VPS — keep Terraform allow_public_http false):"
+  echo "  1. Cloudflare Zero Trust → Networks → Tunnels → create tunnel, or: cloudflared tunnel login"
+  echo "  2. Quick path: cloudflared service install <TOKEN_FROM_DASHBOARD>"
+  echo "  3. Or file-based: see /etc/cloudflared/config.yml.example → copy to config.yml, then:"
+  echo "       cloudflared --config /etc/cloudflared/config.yml tunnel run"
+  echo "     For systemd: cloudflared service install (after placing config + credentials)."
+  echo "  Reference: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/"
+  echo ""
+  echo "- Lock down kube-apiserver (6443) in your cloud firewall to admin IPs only."
+}
+
+main "$@"
