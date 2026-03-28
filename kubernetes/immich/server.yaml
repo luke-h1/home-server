@@ -51,6 +51,9 @@ spec:
                 secretKeyRef:
                   name: immich-secrets
                   key: DB_PASSWORD
+            # Align job/thumbnail parallelism with small nodes (auto-detect can be too aggressive under k8s).
+            - name: CPU_CORES
+              value: "1"
           envFrom:
             - configMapRef:
                 name: immich-env
