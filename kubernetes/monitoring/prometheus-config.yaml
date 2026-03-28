@@ -97,8 +97,8 @@ data:
           - targets: ["blackbox-exporter:9115"]
       - job_name: blackbox-http
         metrics_path: /probe
-        scrape_interval: 120s
-        scrape_timeout: 20s
+        scrape_interval: 2m
+        scrape_timeout: 25s
         params:
           module: [http_2xx]
         static_configs:
@@ -106,6 +106,22 @@ data:
               - "${IMMICH_PUBLIC_URL}/api/server/ping"
               - "${GRAFANA_ROOT_URL}/api/health"
               - "https://${PROMETHEUS_DOMAIN}/-/ready"
+        relabel_configs:
+          - source_labels: [__address__]
+            target_label: __param_target
+          - source_labels: [__param_target]
+            target_label: instance
+          - target_label: __address__
+            replacement: blackbox-exporter:9115
+      - job_name: blackbox-http-basic-auth
+        metrics_path: /probe
+        scrape_interval: 2m
+        scrape_timeout: 25s
+        params:
+          module: [http_2xx_basic_auth]
+        static_configs:
+          - targets:
+              - "https://${ALERTS_DOMAIN}/-/healthy"
         relabel_configs:
           - source_labels: [__address__]
             target_label: __param_target
