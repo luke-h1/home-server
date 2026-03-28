@@ -14,9 +14,9 @@ spec:
         - name: immich-auth-ratelimit
       services:
         - name: immich-server
-          port: 2283
+          port: http
     - match: Host(`${IMMICH_DOMAIN}`)
       priority: 10
       services:
         - name: immich-server
-          port: 2283
+          port: http

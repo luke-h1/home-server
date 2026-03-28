@@ -75,7 +75,7 @@ spec:
           resources:
             requests:
               cpu: 400m
-              memory: 768Mi
+              memory: 512Mi
             limits:
               cpu: "3"
               memory: 3Gi
@@ -133,7 +133,7 @@ spec:
           resources:
             requests:
               cpu: 50m
-              memory: 64Mi
+              memory: 48Mi
             limits:
               cpu: "2"
               memory: 512Mi

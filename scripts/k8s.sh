@@ -341,6 +341,20 @@ main() {
       require_tools
       kubectl patch cronjob immich-pgdump-s3 -n immich -p '{"spec":{"suspend":false}}' --type=merge
       ;;
+    diagnose-immich-routing)
+      command -v kubectl >/dev/null 2>&1 || {
+        echo "kubectl not found" >&2
+        exit 1
+      }
+      if [[ -f "${ENV_FILE}" ]]; then
+        set -a
+        # shellcheck source=/dev/null
+        source "${ENV_FILE}"
+        set +a
+        export KUBECONFIG="${KUBECONFIG:-}"
+      fi
+      bash "${ROOT}/scripts/diagnose-immich-routing.sh"
+      ;;
     *)
       echo "Unknown command: ${cmd}" >&2
       usage
