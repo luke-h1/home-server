@@ -14,5 +14,7 @@ data:
           method: GET
           follow_redirects: true
           preferred_ip_protocol: ip4
+          headers:
+            User-Agent: "lho-uptime-bb-exporter/1.0"
           tls_config:
             insecure_skip_verify: false
