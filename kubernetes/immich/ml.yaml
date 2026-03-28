@@ -52,11 +52,11 @@ spec:
               mountPath: /cache
           resources:
             requests:
-              cpu: 400m
-              memory: 1Gi
+              cpu: 150m
+              memory: 768Mi
             limits:
-              cpu: "3"
-              memory: 5Gi
+              cpu: "600m"
+              memory: 3Gi
       volumes:
         - name: cache
           emptyDir:

@@ -60,10 +60,10 @@ spec:
               subPath: postgres
           resources:
             requests:
-              cpu: 250m
+              cpu: 100m
               memory: 512Mi
             limits:
-              cpu: "2"
+              cpu: "800m"
               memory: 2Gi
       volumes:
         - name: pgdata

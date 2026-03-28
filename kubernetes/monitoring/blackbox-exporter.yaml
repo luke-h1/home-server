@@ -55,10 +55,10 @@ spec:
             readOnlyRootFilesystem: true
           resources:
             requests:
-              cpu: 25m
+              cpu: 15m
               memory: 64Mi
             limits:
-              cpu: 500m
+              cpu: 200m
               memory: 256Mi
           volumeMounts:
             - name: config

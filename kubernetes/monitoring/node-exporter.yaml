@@ -36,10 +36,10 @@ spec:
               containerPort: 9100
           resources:
             requests:
-              cpu: 50m
+              cpu: 25m
               memory: 64Mi
             limits:
-              cpu: 500m
+              cpu: 150m
               memory: 256Mi
           securityContext:
             allowPrivilegeEscalation: false
