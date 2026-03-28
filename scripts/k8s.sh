@@ -7,6 +7,7 @@
 #   ./scripts/k8s.sh apply immich
 #   ./scripts/k8s.sh upgrade-apps
 #   ./scripts/k8s.sh upgrade-k3s
+#   ./scripts/k8s.sh dns-flush
 #
 # Requires: kubectl, envsubst (gettext package: apt install gettext-base)
 
@@ -36,6 +37,7 @@ Commands:
   node-taint-rm      Remove taint named in NODE_TAINT from .env
   backup-suspend     Suspend immich-pgdump-s3 CronJob
   backup-resume      Resume immich-pgdump-s3 CronJob
+  dns-flush          Rollout-restart CoreDNS in kube-system (clears in-cluster DNS cache)
 "
 }
 
@@ -212,6 +214,26 @@ cmd_restart_deploy() {
   kubectl rollout restart "deployment/${dep}" -n "${ns}"
 }
 
+# CoreDNS holds any plugin cache in process memory; restarting pods is the supported way to clear it.
+# Does not flush the Linux host resolver (systemd-resolved, etc.).
+cmd_dns_flush() {
+  local ns="${DNS_COREDNS_NAMESPACE:-kube-system}"
+  local deps dep
+  deps="$(kubectl get deploy -n "${ns}" -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' | grep -Ei 'coredns' || true)"
+  if [[ -z "${deps}" ]]; then
+    echo "No deployment matching *coredns* in namespace ${ns}." >&2
+    echo "Set DNS_COREDNS_NAMESPACE or: kubectl get deploy -A | grep -i coredns" >&2
+    exit 1
+  fi
+  while IFS= read -r dep; do
+    [[ -z "${dep}" ]] && continue
+    echo "Rolling restart ${ns}/deployment/${dep}..."
+    kubectl rollout restart "deployment/${dep}" -n "${ns}"
+    kubectl rollout status "deployment/${dep}" -n "${ns}" --timeout=120s
+  done <<< "${deps}"
+  echo "CoreDNS restarted (in-cluster DNS cache cleared for new pods)."
+}
+
 cmd_upgrade_apps() {
   cmd_restart
   echo "To pull fresh :release images, ensure imagePullPolicy is IfNotPresent/Always as desired."
@@ -339,6 +361,17 @@ main() {
     backup-resume)
       require_tools
       kubectl patch cronjob immich-pgdump-s3 -n immich -p '{"spec":{"suspend":false}}' --type=merge
+      ;;
+    dns-flush)
+      require_tools
+      if [[ -f "${ENV_FILE}" ]]; then
+        set -a
+        # shellcheck source=/dev/null
+        source "${ENV_FILE}"
+        set +a
+        export KUBECONFIG="${KUBECONFIG:-}"
+      fi
+      cmd_dns_flush
       ;;
     diagnose-immich-routing)
       command -v kubectl >/dev/null 2>&1 || {
