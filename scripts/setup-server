@@ -253,7 +253,7 @@ kubectl_shell_helpers() {
     grep -q "home-server setup-server" "${zrc}" 2>/dev/null || {
       cat >>"${zrc}" <<'EOF'
 
-# home-server setup-server — k is /usr/local/bin/k → kubectl
+# home-server setup-server
 export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 if command -v kubectl >/dev/null 2>&1; then
   source <(kubectl completion zsh)
@@ -267,7 +267,7 @@ EOF
     grep -q "home-server setup-server" "${brc}" 2>/dev/null || {
       cat >>"${brc}" <<'EOF'
 
-# home-server setup-server — k is /usr/local/bin/k → kubectl
+# home-server setup-server
 export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 source <(kubectl completion bash 2>/dev/null) || true
 complete -o default -F __start_kubectl k 2>/dev/null || true

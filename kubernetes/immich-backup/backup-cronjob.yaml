@@ -1,6 +1,4 @@
-# Weekly logical backup of Immich Postgres → S3 (custom format), Friday 00:00 UTC.
-# Library images: aws s3 sync from immich-server sidecar same wall time (Fri 00:00 UTC) → s3://.../${BACKUP_S3_PREFIX}/library/
-# Requires: immich-secrets, backup-s3-credentials, scripts/k8s.sh secrets + envsubst vars.
+# Weekly pg_dump → S3 (Fri 00:00 UTC). Library: immich-server sidecar s3 sync same schedule.
 apiVersion: batch/v1
 kind: CronJob
 metadata:

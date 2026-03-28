@@ -51,7 +51,6 @@ spec:
                 secretKeyRef:
                   name: immich-secrets
                   key: DB_PASSWORD
-            # Align job/thumbnail parallelism with small nodes (auto-detect can be too aggressive under k8s).
             - name: CPU_CORES
               value: "1"
           envFrom:
@@ -82,7 +81,6 @@ spec:
             limits:
               cpu: "1100m"
               memory: 3Gi
-        # RWO library PVC cannot be mounted by a second pod; sync runs here (same pod) to S3.
         - name: library-s3-backup
           image: amazon/aws-cli:2.17.44
           imagePullPolicy: IfNotPresent
@@ -113,7 +111,7 @@ spec:
               idle_sleep=86400
               while true; do
                 if [ -z "${BUCKET}" ] || [ -z "${AWS_ACCESS_KEY_ID:-}" ]; then
-                  echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) library-s3-backup idle (set BACKUP_S3_* in .env and backup-s3-credentials secret)"
+                  echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) library-s3-backup idle (no bucket or credentials)"
                   sleep "$idle_sleep"
                   continue
                 fi

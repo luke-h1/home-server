@@ -1,16 +1,8 @@
 #!/usr/bin/env bash
+# Persistent swap file. Idempotent; grows swap if existing file is smaller than SWAP_SIZE_GB.
 #
-# Create or enable a persistent swap file (safe to re-run on an already running server).
-#
-# Usage (on the VPS, as root):
-#   sudo ./scripts/setup-swap.sh
-#
-# Environment (optional):
-#   SWAP_SIZE_GB=N   — size in GiB (default 16)
-#   SWAP_FILE=/path  — swap file path (default /swapfile)
-#
-# If the swap file already exists but is smaller than SWAP_SIZE_GB, it is
-# replaced (swapoff, remove, recreate) so re-runs can grow swap safely.
+# Usage: sudo ./scripts/setup-swap.sh
+# Env: SWAP_SIZE_GB (default 16), SWAP_FILE (default /swapfile)
 
 set -euo pipefail
 

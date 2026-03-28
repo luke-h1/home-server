@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: fail2ban-exporter
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: fail2ban-exporter
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: fail2ban-exporter
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: fail2ban-exporter
+    spec:
+      hostNetwork: false
+      dnsPolicy: ClusterFirst
+      tolerations:
+        - effect: NoSchedule
+          operator: Exists
+        - effect: NoExecute
+          operator: Exists
+      containers:
+        - name: exporter
+          image: registry.gitlab.com/hctrdev/fail2ban-prometheus-exporter:v0.10.3
+          imagePullPolicy: IfNotPresent
+          args:
+            - --web.listen-address=:9191
+            - --collector.f2b.socket=/var/run/fail2ban/fail2ban.sock
+          ports:
+            - name: metrics
+              containerPort: 9191
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+            runAsNonRoot: false
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 5
+            periodSeconds: 15
+          volumeMounts:
+            - name: fail2ban-run
+              mountPath: /var/run/fail2ban
+              readOnly: true
+      volumes:
+        - name: fail2ban-run
+          hostPath:
+            path: /var/run/fail2ban
+            type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fail2ban-exporter
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: fail2ban-exporter
+spec:
+  type: ClusterIP
+  ports:
+    - name: metrics
+      port: 9191
+      targetPort: metrics
+  selector:
+    app.kubernetes.io/name: fail2ban-exporter

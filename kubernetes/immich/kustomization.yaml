@@ -1,4 +1,3 @@
-# Secrets: apply via scripts/k8s.sh secrets
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: immich

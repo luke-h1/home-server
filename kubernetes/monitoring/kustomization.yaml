@@ -1,4 +1,3 @@
-# Secrets: scripts/k8s.sh secrets (kubernetes/.env)
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: monitoring
@@ -18,6 +17,7 @@ configMapGenerator:
       - dashboards/blackbox-exporter.json
       - dashboards/k8s-dashboard-15661.json
       - dashboards/traefik-prometheus.json
+      - dashboards/server-security-signals.json
 resources:
   - namespace.yaml
   - pvc-prometheus.yaml
@@ -30,6 +30,7 @@ resources:
   - kube-state-metrics-clusterrole.yaml
   - kube-state-metrics.yaml
   - node-exporter.yaml
+  - fail2ban-exporter.yaml
   - blackbox-config.yaml
   - blackbox-exporter.yaml
   - cloudflare-exporter.yaml

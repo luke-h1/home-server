@@ -28,6 +28,11 @@ data:
         scrape_interval: 45s
         static_configs:
           - targets: ["node-exporter:9100"]
+      - job_name: fail2ban-exporter
+        scrape_interval: 60s
+        scrape_timeout: 15s
+        static_configs:
+          - targets: ["fail2ban-exporter:9191"]
       - job_name: kube-state-metrics
         scrape_interval: 45s
         static_configs:
@@ -59,7 +64,6 @@ data:
         metric_relabel_configs:
           - target_label: origin_prometheus
             replacement: k3s
-      # k3s Traefik in kube-system; metrics usually :9100 (Grafana dashboard https://grafana.com/grafana/dashboards/4475-traefik/)
       - job_name: traefik
         scrape_interval: 45s
         kubernetes_sd_configs:

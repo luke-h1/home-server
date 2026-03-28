@@ -1,6 +1,4 @@
-# HPA for ML only: immich-server uses a ReadWriteOnce library PVC and must stay at 1 replica.
-# maxReplicas: 1 — sane default for ~2 vCPU nodes (raise if you add cores).
-# Requires metrics-server (bundled with typical k3s installs).
+# ML only; immich-server stays 1 replica (RWO library PVC). Needs metrics-server.
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:

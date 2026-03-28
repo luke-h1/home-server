@@ -1,12 +1,6 @@
 #!/usr/bin/env bash
-# Cloudflare Tunnel: install token from Zero Trust + cloudflared service (see README).
-# Domains must match kubernetes/.env (IMMICH_DOMAIN, GRAFANA_DOMAIN, …); routes are configured in the tunnel UI.
-#
-# Docs: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/
-#
-#   Zero Trust → Networks → Tunnels → create tunnel → copy install token
-#   Put CLOUDFLARE_TUNNEL_TOKEN in kubernetes/.env
-#   sudo ./scripts/cloudflare-tunnel.sh install-token
+# cloudflared install + config helpers. Token in kubernetes/.env; routes in Zero Trust UI.
+# https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/
 
 set -euo pipefail
 

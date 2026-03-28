@@ -82,8 +82,7 @@ kustomize_render() {
   kubectl kustomize "${dir}" | envsubst "${ENV_SUBST_FORMAT}"
 }
 
-# Server-side apply avoids kubectl.kubernetes.io/last-applied-configuration growing past the
-# 256KiB annotation limit (large Grafana dashboard ConfigMaps from kustomize fail otherwise).
+# Server-side apply avoids 256KiB last-applied-configuration limits on large ConfigMaps.
 apply_kustomize_stream() {
   kubectl apply --server-side --force-conflicts --field-manager=home-server-kustomize -f -
 }

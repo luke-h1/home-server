@@ -32,8 +32,6 @@ spec:
                   key: DB_PASSWORD
             - name: TRANSFORMERS_CACHE
               value: /cache
-            # Low-CPU nodes (~2 vCPU): defaults follow host core count and intra-op=2, which starves API/DB.
-            # See https://immich.app/docs/install/environment-variables/ (Machine Learning).
             - name: MACHINE_LEARNING_REQUEST_THREADS
               value: "1"
             - name: MACHINE_LEARNING_MODEL_INTRA_OP_THREADS
