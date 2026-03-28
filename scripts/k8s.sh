@@ -15,7 +15,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENV_FILE="${K8S_ENV_FILE:-${ROOT}/kubernetes/.env}"
 
-ENV_SUBST_FORMAT='${IMMICH_DOMAIN}${IMMICH_PUBLIC_URL}${GRAFANA_DOMAIN}${PROMETHEUS_DOMAIN}${ALERTS_DOMAIN}${GRAFANA_ROOT_URL}${BACKUP_S3_BUCKET}${BACKUP_S3_PREFIX}${AWS_REGION}'
+ENV_SUBST_FORMAT='${IMMICH_DOMAIN}${IMMICH_PUBLIC_URL}${GRAFANA_DOMAIN}${PROMETHEUS_DOMAIN}${ALERTS_DOMAIN}${UPTIME_KUMA_DOMAIN}${GRAFANA_ROOT_URL}${BACKUP_S3_BUCKET}${BACKUP_S3_PREFIX}${AWS_REGION}'
 
 usage() {
   sed -n '2,20p' "$0" | sed 's/^# //'
@@ -23,10 +23,10 @@ usage() {
 Commands:
   env-check          Verify kubectl and envsubst; load .env
   secrets            Create/update immich + monitoring secrets (incl. Alertmanager Traefik basic auth)
-  apply all|immich|immich-backup|monitoring   Kustomize + envsubst + kubectl apply (server-side; large ConfigMaps)
+  apply all|immich|immich-backup|monitoring|uptime-kuma   Kustomize + envsubst + kubectl apply (server-side; large ConfigMaps)
   deploy all            secrets + apply all (first-time convenience)
-  diff all|immich|immich-backup|monitoring   Preview changes
-  delete immich|monitoring     Delete namespace (destructive)
+  diff all|immich|immich-backup|monitoring|uptime-kuma   Preview changes
+  delete immich|monitoring|uptime-kuma     Delete namespace (destructive)
   restart [ns]       Rollout restart all deployments in namespace (default: both ns)
   restart-deploy NS/DEPLOY     e.g. immich/immich-server
   upgrade-apps       Rollout restart immich + monitoring deployments (image pull latest :release)
@@ -75,6 +75,7 @@ require_domain_vars() {
   : "${GRAFANA_ROOT_URL:?Set GRAFANA_ROOT_URL in ${ENV_FILE}}"
   : "${PROMETHEUS_DOMAIN:?Set PROMETHEUS_DOMAIN in ${ENV_FILE}}"
   : "${ALERTS_DOMAIN:?Set ALERTS_DOMAIN in ${ENV_FILE}}"
+  : "${UPTIME_KUMA_DOMAIN:?Set UPTIME_KUMA_DOMAIN in ${ENV_FILE} (Uptime Kuma ingress; e.g. status.example.com)}"
 }
 
 kustomize_render() {
@@ -105,6 +106,9 @@ apply_stack() {
     monitoring)
       kustomize_render "${ROOT}/kubernetes/monitoring" | apply_kustomize_stream
       ;;
+    uptime-kuma)
+      kustomize_render "${ROOT}/kubernetes/uptime-kuma" | apply_kustomize_stream
+      ;;
     *)
       echo "Unknown target: ${target}" >&2
       exit 1
@@ -126,6 +130,7 @@ diff_stack() {
       kustomize_render "${ROOT}/kubernetes/immich-backup" | kubectl diff -f - || true
       ;;
     monitoring) kustomize_render "${ROOT}/kubernetes/monitoring" | kubectl diff -f - || true ;;
+    uptime-kuma) kustomize_render "${ROOT}/kubernetes/uptime-kuma" | kubectl diff -f - || true ;;
     *) echo "Unknown target" >&2; exit 1 ;;
   esac
 }
@@ -137,6 +142,7 @@ cmd_secrets() {
 
   kubectl create namespace immich 2>/dev/null || true
   kubectl create namespace monitoring 2>/dev/null || true
+  kubectl create namespace uptime-kuma 2>/dev/null || true
 
   kubectl create secret generic immich-secrets \
     -n immich \
@@ -192,10 +198,10 @@ cmd_secrets() {
 cmd_restart() {
   local ns="${1:-}"
   if [[ -z "${ns}" ]]; then
-    for n in immich monitoring; do
+    for n in immich monitoring uptime-kuma; do
       kubectl rollout restart deployment -n "${n}" 2>/dev/null || true
     done
-    echo "Restarted deployments in immich and monitoring (if present)."
+    echo "Restarted deployments in immich, monitoring, and uptime-kuma (if present)."
     return 0
   fi
   kubectl rollout restart deployment -n "${ns}"
@@ -283,7 +289,8 @@ cmd_delete() {
   case "${target}" in
     immich) kubectl delete namespace immich --wait=false ;;
     monitoring) kubectl delete namespace monitoring --wait=false ;;
-    *) echo "Use: delete immich | delete monitoring" >&2; exit 1 ;;
+    uptime-kuma) kubectl delete namespace uptime-kuma --wait=false ;;
+    *) echo "Use: delete immich | delete monitoring | delete uptime-kuma" >&2; exit 1 ;;
   esac
 }
 
