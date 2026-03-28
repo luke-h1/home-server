@@ -4,4 +4,3 @@ resources:
   - immich
   - immich-backup
   - monitoring
-  - uptime-kuma

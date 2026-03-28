@@ -53,11 +53,13 @@ Domains in `.env` should match tunnel public hostnames + DNS.
 ```bash
 ./scripts/k8s.sh env-check
 ./scripts/k8s.sh secrets
-./scripts/k8s.sh apply all          # needs S3 vars; includes immich, backup cron, monitoring, uptime-kuma
+./scripts/k8s.sh apply all          # needs S3 vars; includes immich, backup cron, monitoring (incl. Uptime Kuma)
 # or: ./scripts/k8s.sh deploy all
 ```
 
-Partial: `apply immich` | `apply immich-backup` | `apply monitoring` | `apply uptime-kuma`. Preview: `diff all`.
+Partial: `apply immich` | `apply immich-backup` | `apply monitoring` (Prometheus stack + Uptime Kuma). Preview: `diff all`.
+
+If you previously used the `uptime-kuma` namespace, re-apply `monitoring` then remove the old namespace/PVC once you are done with that data (`kubectl delete namespace uptime-kuma`).
 
 Weekly **Friday 00:00 UTC:** Postgres dump to S3 + library `aws s3 sync` from the `immich-server` sidecar (RWO PVC).
 
@@ -81,8 +83,7 @@ Optional: `render-config` / `write-config` from `kubernetes/cloudflared-config.y
 | Namespace     | What                                                                                                                                                                                                                                                 |
 | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `immich`      | Immich (Traefik `IngressRoute`, auth rate limit), Postgres, Redis, ML (HPA max 1 by default), library S3 sidecar; weekly `pg_dump` CronJob → S3                                                                                                      |
-| `monitoring`  | Prometheus, Grafana, Alertmanager (basic auth on alerts ingress), node-exporter, kube-state-metrics, blackbox, optional Cloudflare exporter, [fail2ban-exporter](https://github.com/hectorjsmith/fail2ban-prometheus-exporter) (needs host fail2ban) |
-| `uptime-kuma` | [Uptime Kuma](https://github.com/louislam/uptime-kuma), SQLite on RWO PVC                                                                                                                                                                            |
+| `monitoring`  | Prometheus, Grafana, Alertmanager (basic auth on alerts ingress), node-exporter, kube-state-metrics, blackbox, optional Cloudflare exporter, [fail2ban-exporter](https://github.com/hectorjsmith/fail2ban-prometheus-exporter) (needs host fail2ban), [Uptime Kuma](https://github.com/louislam/uptime-kuma) (SQLite, RWO PVC, ingress `UPTIME_KUMA_DOMAIN`) |
 
 Grafana dashboards include community Immich / k8s / Traefik JSON plus a small **Server security signals** board (`f2b_*` + node/kube metrics; not raw auth logs).
 
@@ -90,11 +91,11 @@ Grafana dashboards include community Immich / k8s / Traefik JSON plus a small **
 
 | Command                                                           | Purpose                                                              |
 | ----------------------------------------------------------------- | -------------------------------------------------------------------- |
-| `./scripts/k8s.sh restart`                                        | Rollout restart deployments in `immich`, `monitoring`, `uptime-kuma` |
+| `./scripts/k8s.sh restart`                                        | Rollout restart deployments in `immich`, `monitoring` (includes Uptime Kuma) |
 | `./scripts/k8s.sh backup-suspend` / `backup-resume`               | Immich pgdump CronJob                                                |
 | `./scripts/restore-immich-from-s3.sh`                             | Restore DB from S3 (see script header)                               |
 | `./scripts/snapshot-k3s-s3.sh`                                    | k3s etcd snapshot → S3 (server, root)                                |
-| `./scripts/k8s.sh delete immich` \| `monitoring` \| `uptime-kuma` | Destructive                                                          |
+| `./scripts/k8s.sh delete immich` \| `monitoring`                  | Destructive (monitoring deletes Uptime Kuma too)                     |
 
 More flags: `./scripts/k8s.sh` (no args) or read `k8s.sh` usage block.
 
