@@ -397,7 +397,19 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Instance"
+              "options": "Service"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 180
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "URL"
             },
             "properties": [
               {
@@ -405,14 +417,14 @@
                 "value": [
                   {
                     "targetBlank": true,
-                    "title": "${__data.fields.Instance}",
-                    "url": "${__data.fields.Instance}"
+                    "title": "${__data.fields.URL}",
+                    "url": "${__data.fields.URL}"
                   }
                 ]
               },
               {
                 "id": "custom.width",
-                "value": 276
+                "value": 320
               }
             ]
           },
@@ -431,7 +443,7 @@
         ]
       },
       "gridPos": {
-        "h": 9,
+        "h": 16,
         "w": 24,
         "x": 0,
         "y": 0
@@ -442,7 +454,7 @@
         "sortBy": [
           {
             "desc": false,
-            "displayName": "SSL Cert Expiry (days)"
+            "displayName": "Service"
           }
         ]
       },
@@ -511,7 +523,7 @@
       ],
       "timeFrom": null,
       "timeShift": null,
-      "title": "HTTP Probe Overview",
+      "title": "Service Health",
       "transformations": [
         {
           "id": "seriesToColumns",
@@ -532,10 +544,14 @@
               "Time 6": true,
               "Time 7": true,
               "Time 8": true,
-              "Value": false,
+              "Value": true,
               "Value #A": false,
               "Value #B": false,
+              "Value #C": true,
+              "Value #D": false,
+              "Value #E": false,
               "Value #F": true,
+              "Value #G": true,
               "__name__": true,
               "__name__ 1": true,
               "__name__ 2": true,
@@ -554,6 +570,15 @@
               "job 7": true,
               "job 8": true,
               "phase": true,
+              "service": false,
+              "service 1": true,
+              "service 2": true,
+              "service 3": true,
+              "service 4": true,
+              "service 5": true,
+              "service 6": true,
+              "service 7": true,
+              "service 8": true,
               "type": true,
               "type 1": true,
               "type 2": true,
@@ -566,6 +591,13 @@
               "version": false
             },
             "indexByName": {
+              "service": 0,
+              "instance": 1,
+              "Value #A": 2,
+              "Value #D": 3,
+              "Value #B": 4,
+              "version": 5,
+              "Value #E": 6,
               "Time 1": 9,
               "Time 2": 13,
               "Time 3": 17,
@@ -573,19 +605,11 @@
               "Time 5": 24,
               "Time 6": 28,
               "Time 7": 32,
-              "Value #A": 1,
-              "Value #B": 3,
-              "Value #C": 5,
-              "Value #D": 2,
-              "Value #E": 6,
-              "Value #F": 8,
-              "Value #G": 7,
               "__name__ 1": 10,
               "__name__ 2": 14,
               "__name__ 3": 21,
               "__name__ 4": 25,
               "__name__ 5": 29,
-              "instance": 0,
               "job 1": 11,
               "job 2": 15,
               "job 3": 18,
@@ -597,8 +621,7 @@
               "type 3": 19,
               "type 4": 23,
               "type 5": 27,
-              "type 6": 31,
-              "version": 4
+              "type 6": 31
             },
             "renameByName": {
               "Value": "Up",
@@ -610,7 +633,8 @@
               "Value #F": "",
               "Value #G": "DNS Lookup Duration (s)",
               "Value #H": "Probe IP",
-              "instance": "Instance",
+              "instance": "URL",
+              "service": "Service",
               "type 6": "",
               "version": "TLS Version"
             }
@@ -642,7 +666,7 @@
         "h": 9,
         "w": 24,
         "x": 0,
-        "y": 9
+        "y": 16
       },
       "hiddenSeries": false,
       "id": 4,
@@ -734,7 +758,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 18
+        "y": 25
       },
       "id": 8,
       "panels": [
