@@ -41,7 +41,7 @@ cp kubernetes/.env.example kubernetes/.env
 Fill in at least:
 
 - **URLs:** `IMMICH_DOMAIN`, `IMMICH_PUBLIC_URL`, `GRAFANA_DOMAIN`, `GRAFANA_ROOT_URL`, `PROMETHEUS_DOMAIN`, `ALERTS_DOMAIN`
-- **Secrets:** `IMMICH_DB_PASSWORD`, `GRAFANA_ADMIN_*`, `ALERTS_BASIC_AUTH_*` (Alertmanager + Prometheus ingress; Blackbox probes)
+- **Secrets:** `IMMICH_DB_PASSWORD`, `GRAFANA_ADMIN_*`, `ALERTS_BASIC_AUTH_*` (Alertmanager + Prometheus ingress; Blackbox probes), `ALERTMANAGER_TELEGRAM_*` (Alertmanager notifications)
 - **S3 backups:** `BACKUP_S3_BUCKET`, `BACKUP_S3_PREFIX`, `AWS_REGION`, optional `BACKUP_S3_ACCESS_KEY_ID` / `BACKUP_S3_SECRET_ACCESS_KEY` for `./scripts/k8s.sh secrets`
 - **Tunnel:** `CLOUDFLARE_TUNNEL_TOKEN`, `CLOUDFLARE_TUNNEL_ORIGIN` (default `http://127.0.0.1:80` → Traefik)
 - **Optional:** `CLOUDFLARE_EXPORTER_API_TOKEN`, `CLOUDFLARE_ACCOUNT_IDS` for the Cloudflare exporter
@@ -82,6 +82,8 @@ Optional: `render-config` / `write-config` from `kubernetes/cloudflared-config.y
 | `monitoring` | Prometheus, Grafana, Alertmanager (basic auth on Prometheus + alerts ingresses), node-exporter, kube-state-metrics, blackbox, optional Cloudflare exporter, [fail2ban-exporter](https://github.com/hectorjsmith/fail2ban-prometheus-exporter) (needs host fail2ban) |
 
 Grafana dashboards include community Immich / k8s / Traefik JSON, a **Service Reliability** board for blackbox-monitored services, plus a small **Server security signals** board (`f2b_*` + node/kube metrics; not raw auth logs).
+
+Alert delivery defaults to Telegram once `ALERTMANAGER_TELEGRAM_BOT_TOKEN` and `ALERTMANAGER_TELEGRAM_CHAT_ID` are set and `./scripts/k8s.sh secrets` has created the `alertmanager-telegram` secret.
 
 ## Scripts
 

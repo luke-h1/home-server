@@ -4,13 +4,13 @@ metadata:
   name: alertmanager-config
   namespace: monitoring
 data:
-  # Add email_configs / slack_configs / webhook under receivers.default to get notified.
+  # Add or replace receivers here if you want a different destination than Telegram.
   # Prometheus rules live in prometheus-config ConfigMap (alerts.yml).
   alertmanager.yml: |
     global:
       resolve_timeout: 5m
     route:
-      receiver: default
+      receiver: telegram
       group_by: ['alertname', 'service', 'job']
       group_wait: 30s
       group_interval: 5m
@@ -36,4 +36,25 @@ data:
           - alertname="ServiceUnreachable"
           - service="alertmanager"
     receivers:
-      - name: default
+      - name: telegram
+        telegram_configs:
+          - bot_token_file: /etc/alertmanager/secrets/bot-token
+            chat_id_file: /etc/alertmanager/secrets/chat-id
+            send_resolved: true
+            parse_mode: ""
+            message: |-
+              [{{ .Status | toUpper }}] {{ .CommonLabels.alertname }}
+
+              {{- if .CommonLabels.service }}
+              Service: {{ .CommonLabels.service }}
+              {{- end }}
+              {{- if .CommonLabels.job }}
+              Job: {{ .CommonLabels.job }}
+              {{- end }}
+
+              {{- range .Alerts }}
+              - {{ .Annotations.summary }}
+              {{- if .Annotations.description }}
+                {{ .Annotations.description }}
+              {{- end }}
+              {{- end }}

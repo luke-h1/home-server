@@ -196,6 +196,17 @@ cmd_secrets() {
     echo "Skipping cloudflare-exporter secret (set CLOUDFLARE_EXPORTER_API_TOKEN for Cloudflare Workers metrics)."
   fi
 
+  if [[ -n "${ALERTMANAGER_TELEGRAM_BOT_TOKEN:-}" && -n "${ALERTMANAGER_TELEGRAM_CHAT_ID:-}" ]]; then
+    kubectl create secret generic alertmanager-telegram \
+      -n monitoring \
+      --from-literal=bot-token="${ALERTMANAGER_TELEGRAM_BOT_TOKEN}" \
+      --from-literal=chat-id="${ALERTMANAGER_TELEGRAM_CHAT_ID}" \
+      --dry-run=client -o yaml | kubectl apply -f -
+    echo "alertmanager-telegram secret applied in monitoring (Telegram Alertmanager receiver)."
+  else
+    echo "Skipping alertmanager-telegram secret (set ALERTMANAGER_TELEGRAM_BOT_TOKEN and ALERTMANAGER_TELEGRAM_CHAT_ID for Telegram alerts)."
+  fi
+
   echo "Secrets applied. Roll out workloads if they were already running: ./scripts/k8s.sh restart"
 }
 
