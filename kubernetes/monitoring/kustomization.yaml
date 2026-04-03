@@ -12,6 +12,7 @@ configMapGenerator:
       - dashboards/immich-overview.json
   - name: grafana-dashboard-infra
     files:
+      - dashboards/service-reliability.json
       - dashboards/node-exporter-full.json
       - dashboards/kube-state-metrics.json
       - dashboards/blackbox-exporter.json

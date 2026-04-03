@@ -81,7 +81,7 @@ Optional: `render-config` / `write-config` from `kubernetes/cloudflared-config.y
 | `immich`     | Immich (Traefik `IngressRoute`, auth rate limit), Postgres, Redis, ML (HPA max 1 by default), library S3 sidecar; weekly `pg_dump` CronJob → S3                                                                                                      |
 | `monitoring` | Prometheus, Grafana, Alertmanager (basic auth on Prometheus + alerts ingresses), node-exporter, kube-state-metrics, blackbox, optional Cloudflare exporter, [fail2ban-exporter](https://github.com/hectorjsmith/fail2ban-prometheus-exporter) (needs host fail2ban) |
 
-Grafana dashboards include community Immich / k8s / Traefik JSON plus a small **Server security signals** board (`f2b_*` + node/kube metrics; not raw auth logs).
+Grafana dashboards include community Immich / k8s / Traefik JSON, a **Service Reliability** board for blackbox-monitored services, plus a small **Server security signals** board (`f2b_*` + node/kube metrics; not raw auth logs).
 
 ## Scripts
 
