@@ -12,3 +12,4 @@ crash.log
 crash.*.log
 backend.hcl
 kubernetes/.env
+./exporters/fail2ban-security-exporter

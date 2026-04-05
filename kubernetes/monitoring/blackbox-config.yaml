@@ -5,31 +5,32 @@ metadata:
   namespace: monitoring
 data:
   blackbox.yml: |
-    modules:
-      http_2xx:
-        prober: http
-        timeout: 15s
-        http:
-          valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
-          method: GET
-          follow_redirects: true
-          preferred_ip_protocol: ip4
-          headers:
-            User-Agent: "lho-uptime-bb-exporter/1.0"
-          tls_config:
-            insecure_skip_verify: false
-      http_2xx_basic_auth:
-        prober: http
-        timeout: 15s
-        http:
-          valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
-          method: GET
-          follow_redirects: true
-          preferred_ip_protocol: ip4
-          headers:
-            User-Agent: "lho-uptime-bb-exporter/1.0"
-          basic_auth:
-            username: "${ALERTS_BASIC_AUTH_USER}"
-            password: "${ALERTS_BASIC_AUTH_PASSWORD}"
-          tls_config:
-            insecure_skip_verify: false
+    # HTTP modules disabled (see prometheus blackbox-http* scrape jobs)
+    modules: {}
+    # http_2xx:
+    #   prober: http
+    #   timeout: 15s
+    #   http:
+    #     valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+    #     method: GET
+    #     follow_redirects: true
+    #     preferred_ip_protocol: ip4
+    #     headers:
+    #       User-Agent: "lho-uptime-bb-exporter/1.0"
+    #     tls_config:
+    #       insecure_skip_verify: false
+    # http_2xx_basic_auth:
+    #   prober: http
+    #   timeout: 15s
+    #   http:
+    #     valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+    #     method: GET
+    #     follow_redirects: true
+    #     preferred_ip_protocol: ip4
+    #     headers:
+    #       User-Agent: "lho-uptime-bb-exporter/1.0"
+    #     basic_auth:
+    #       username: "${ALERTS_BASIC_AUTH_USER}"
+    #       password: "${ALERTS_BASIC_AUTH_PASSWORD}"
+    #     tls_config:
+    #       insecure_skip_verify: false

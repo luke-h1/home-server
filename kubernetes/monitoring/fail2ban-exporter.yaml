@@ -23,8 +23,8 @@ spec:
           operator: Exists
       containers:
         - name: exporter
-          image: registry.gitlab.com/hctrdev/fail2ban-prometheus-exporter:0.10.3
-          imagePullPolicy: IfNotPresent
+          image: fail2ban-security-exporter:local
+          imagePullPolicy: Never
           args:
             - --web.listen-address=:9191
             - --collector.f2b.socket=/var/run/fail2ban/fail2ban.sock
@@ -48,13 +48,13 @@ spec:
               memory: 128Mi
           livenessProbe:
             httpGet:
-              path: /metrics
+              path: /healthz
               port: metrics
             initialDelaySeconds: 15
             periodSeconds: 30
           readinessProbe:
             httpGet:
-              path: /metrics
+              path: /healthz
               port: metrics
             initialDelaySeconds: 5
             periodSeconds: 15
