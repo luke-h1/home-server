@@ -3,7 +3,7 @@ G# home-server
 ## Contents
 
 - [Terraform](#terraform) — VPS
-- [Bootstrap](#bootstrap) — k3s + tooling
+- [Bootstrap](#bootstrap) — k3s + tooling + Docker
 - [Deploy](#deploy) — `.env`, secrets, `k8s.sh`
 - [Cloudflare Tunnel](#cloudflare-tunnel)
 - [Stacks](#stacks)
@@ -55,7 +55,7 @@ Domains in `.env` should match tunnel public hostnames + DNS.
 # or: ./scripts/k8s.sh deploy all
 ```
 
-Partial: `apply immich` | `apply immich-backup` | `apply monitoring` (Prometheus stack). Preview: `diff all`.
+Partial: `apply immich` | `apply immich-backup` | `apply monitoring` (Prometheus + Loki stack). Preview: `diff all`.
 
 Weekly **Friday 00:00 UTC:** Postgres dump to S3 + library `aws s3 sync` from the `immich-server` sidecar (RWO PVC).
 
@@ -79,9 +79,20 @@ Optional: `render-config` / `write-config` from `kubernetes/cloudflared-config.y
 | Namespace    | What                                                                                                                                                                                                                                                                |
 | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `immich`     | Immich (Traefik `IngressRoute`, auth rate limit), Postgres, Redis, ML (HPA max 1 by default), library S3 sidecar; weekly `pg_dump` CronJob → S3                                                                                                                     |
-| `monitoring` | Prometheus, Grafana, Alertmanager (basic auth on Prometheus + alerts ingresses), node-exporter, kube-state-metrics, blackbox, optional Cloudflare exporter, [fail2ban-exporter](https://github.com/hectorjsmith/fail2ban-prometheus-exporter) (needs host fail2ban) |
+| `monitoring` | Prometheus, Grafana, Alertmanager (basic auth on Prometheus + alerts ingresses), Loki, Promtail, node-exporter, kube-state-metrics, blackbox, optional Cloudflare exporter, [fail2ban-exporter](https://github.com/hectorjsmith/fail2ban-prometheus-exporter) (needs host fail2ban) |
 
-Grafana dashboards include community Immich / k8s / Traefik JSON, a **Service Reliability** board for blackbox-monitored services, plus a small **Server security signals** board (`f2b_*` + node/kube metrics; not raw auth logs).
+Grafana dashboards include community Immich / k8s / Traefik JSON, a **Service Reliability** board for blackbox-monitored services, plus a small **Server security signals** board (`f2b_*` + node/kube metrics) with Loki available for raw pod and auth logs.
+
+### Cluster logs with Loki
+
+`./scripts/k8s.sh apply monitoring` now also deploys Loki + Promtail. Promtail tails Kubernetes pod logs cluster-wide and host `/var/log/auth.log`, and Grafana provisions a `Loki` datasource automatically.
+
+Useful Explore queries:
+
+```logql
+{job="node-authlog"} |= "sshd"
+{namespace="immich"} |= "error"
+```
 
 ### Local fail2ban exporter image
 

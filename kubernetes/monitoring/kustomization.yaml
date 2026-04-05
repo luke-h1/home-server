@@ -24,6 +24,7 @@ resources:
   - pvc-prometheus.yaml
   - pvc-grafana.yaml
   - pvc-alertmanager.yaml
+  - pvc-loki.yaml
   - prometheus-rbac.yaml
   - prometheus-config.yaml
   - prometheus.yaml
@@ -38,6 +39,9 @@ resources:
   - alertmanager-config.yaml
   - alertmanager.yaml
   - alertmanager-service.yaml
+  - loki-config.yaml
+  - loki.yaml
+  - promtail.yaml
   - grafana-datasource.yaml
   - grafana-dashboard-providers.yaml
   - grafana.yaml

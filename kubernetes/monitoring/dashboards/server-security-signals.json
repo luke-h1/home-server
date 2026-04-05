@@ -12,7 +12,7 @@
       }
     ]
   },
-  "description": "Host/cluster metrics (OOM, disk, load, network, k8s pressure, fail2ban jails). Add Loki for raw auth logs.",
+  "description": "Host/cluster metrics (OOM, disk, load, network, k8s pressure, fail2ban jails) with Loki available for raw pod and auth logs.",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -25,7 +25,7 @@
       "id": 100,
       "options": {
         "code": {"language": "markdown", "showLineNumbers": false, "showMiniMap": false},
-        "content": "Prometheus metrics. **Fail2ban** (`f2b_*`) needs `fail2ban` on the node and `fail2ban-exporter` DaemonSet (host `/var/run/fail2ban`). For full auth.log coverage add **Loki**.",
+        "content": "Prometheus metrics plus Loki log search. **Fail2ban** (`f2b_*`) needs `fail2ban` on the node and `fail2ban-exporter` DaemonSet (host `/var/run/fail2ban`). Use Grafana Explore with the **Loki** datasource for raw pod logs and `/var/log/auth.log`.",
         "mode": "markdown"
       },
       "title": "Scope",
@@ -719,17 +719,44 @@
         }
       ],
       "type": "table"
+    },
+    {
+      "datasource": {"type": "loki", "uid": "loki"},
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 60},
+      "id": 56,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": true,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "pluginVersion": "11.2.0",
+      "targets": [
+        {
+          "datasource": {"type": "loki", "uid": "loki"},
+          "editorMode": "builder",
+          "expr": "{job=\"node-authlog\"} |= \"sshd\"",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "Recent SSH auth logs",
+      "type": "logs"
     }
   ],
   "refresh": "30s",
   "schemaVersion": 39,
-  "tags": ["security", "linux", "node-exporter", "kubernetes", "fail2ban"],
+  "tags": ["security", "linux", "node-exporter", "kubernetes", "fail2ban", "loki"],
   "templating": {"list": []},
   "time": {"from": "now-6h", "to": "now"},
   "timepicker": {},
   "timezone": "browser",
   "title": "Server security signals",
   "uid": "server-security-signals",
-  "version": 1,
+  "version": 2,
   "weekStart": ""
 }
