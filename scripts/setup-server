@@ -47,6 +47,7 @@ apt_update_install() {
   apt-get install -y \
     ca-certificates \
     curl \
+    docker.io \
     gnupg \
     git \
     jq \
