@@ -1,4 +1,4 @@
-# home-server
+G# home-server
 
 ## Contents
 
@@ -76,12 +76,22 @@ Optional: `render-config` / `write-config` from `kubernetes/cloudflared-config.y
 
 ## Stacks
 
-| Namespace    | What                                                                                                                                                                                                                                                 |
-| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `immich`     | Immich (Traefik `IngressRoute`, auth rate limit), Postgres, Redis, ML (HPA max 1 by default), library S3 sidecar; weekly `pg_dump` CronJob → S3                                                                                                      |
+| Namespace    | What                                                                                                                                                                                                                                                                |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `immich`     | Immich (Traefik `IngressRoute`, auth rate limit), Postgres, Redis, ML (HPA max 1 by default), library S3 sidecar; weekly `pg_dump` CronJob → S3                                                                                                                     |
 | `monitoring` | Prometheus, Grafana, Alertmanager (basic auth on Prometheus + alerts ingresses), node-exporter, kube-state-metrics, blackbox, optional Cloudflare exporter, [fail2ban-exporter](https://github.com/hectorjsmith/fail2ban-prometheus-exporter) (needs host fail2ban) |
 
 Grafana dashboards include community Immich / k8s / Traefik JSON, a **Service Reliability** board for blackbox-monitored services, plus a small **Server security signals** board (`f2b_*` + node/kube metrics; not raw auth logs).
+
+### Local fail2ban exporter image
+
+The fail2ban exporter is built from `exporters/fail2ban` and the DaemonSet uses a local-only image tag:
+
+```bash
+./scripts/build-fail2ban-exporter.sh
+./scripts/k8s.sh apply monitoring
+kubectl -n monitoring rollout status ds/fail2ban-exporter --timeout=120s
+```
 
 Alert delivery defaults to Telegram once `ALERTMANAGER_TELEGRAM_BOT_TOKEN` and `ALERTMANAGER_TELEGRAM_CHAT_ID` are set and `./scripts/k8s.sh secrets` has created the `alertmanager-telegram` secret.
 
