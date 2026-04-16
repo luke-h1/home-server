@@ -4,6 +4,7 @@ namespace: immich
 resources:
   - namespace.yaml
   - configmap.yaml
+  - configuration.yaml
   - pvc-db.yaml
   - pvc-library.yaml
   - redis.yaml

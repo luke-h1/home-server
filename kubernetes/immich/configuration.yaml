@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: immich-config
+  namespace: immich
+  labels:
+    app: immich
+data:
+  configuration.yml: |
+    job:
+      sidecar:
+        concurrency: 20

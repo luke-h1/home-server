@@ -53,6 +53,8 @@ spec:
                   key: DB_PASSWORD
             - name: CPU_CORES
               value: "1"
+            - name: IMMICH_CONFIG_FILE
+              value: /config/configuration.yml
           envFrom:
             - configMapRef:
                 name: immich-env
@@ -71,6 +73,10 @@ spec:
             periodSeconds: 10
             timeoutSeconds: 5
           volumeMounts:
+            - name: config
+              mountPath: /config/configuration.yml
+              subPath: configuration.yml
+              readOnly: true
             - name: library
               mountPath: /usr/src/app/upload
               subPath: library
@@ -139,6 +145,9 @@ spec:
               cpu: 200m
               memory: 512Mi
       volumes:
+        - name: config
+          configMap:
+            name: immich-config
         - name: library
           persistentVolumeClaim:
             claimName: immich-library-pvc

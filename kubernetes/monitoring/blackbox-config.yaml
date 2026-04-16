@@ -5,32 +5,47 @@ metadata:
   namespace: monitoring
 data:
   blackbox.yml: |
-    # HTTP modules disabled (see prometheus blackbox-http* scrape jobs)
-    modules: {}
-    # http_2xx:
-    #   prober: http
-    #   timeout: 15s
-    #   http:
-    #     valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
-    #     method: GET
-    #     follow_redirects: true
-    #     preferred_ip_protocol: ip4
-    #     headers:
-    #       User-Agent: "lho-uptime-bb-exporter/1.0"
-    #     tls_config:
-    #       insecure_skip_verify: false
-    # http_2xx_basic_auth:
-    #   prober: http
-    #   timeout: 15s
-    #   http:
-    #     valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
-    #     method: GET
-    #     follow_redirects: true
-    #     preferred_ip_protocol: ip4
-    #     headers:
-    #       User-Agent: "lho-uptime-bb-exporter/1.0"
-    #     basic_auth:
-    #       username: "${ALERTS_BASIC_AUTH_USER}"
-    #       password: "${ALERTS_BASIC_AUTH_PASSWORD}"
-    #     tls_config:
-    #       insecure_skip_verify: false
+    modules:
+      http_2xx:
+        prober: http
+        timeout: 15s
+        http:
+          valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+          method: GET
+          follow_redirects: true
+          preferred_ip_protocol: ip4
+          headers:
+            User-Agent: "lho-uptime-bb-exporter/1.0"
+          tls_config:
+            insecure_skip_verify: false
+      http_2xx_public:
+        prober: http
+        timeout: 15s
+        http:
+          valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+          method: GET
+          follow_redirects: true
+          preferred_ip_protocol: ip4
+          headers:
+            User-Agent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36"
+            X-Monitor-Agent: "lho-uptime-bb-exporter/1.0"
+            Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+            Accept-Language: "en-GB,en;q=0.9"
+            Cache-Control: "no-cache"
+          tls_config:
+            insecure_skip_verify: false
+      http_2xx_basic_auth:
+        prober: http
+        timeout: 15s
+        http:
+          valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+          method: GET
+          follow_redirects: true
+          preferred_ip_protocol: ip4
+          headers:
+            User-Agent: "lho-uptime-bb-exporter/1.0"
+          basic_auth:
+            username: "${ALERTS_BASIC_AUTH_USER}"
+            password: "${ALERTS_BASIC_AUTH_PASSWORD}"
+          tls_config:
+            insecure_skip_verify: false

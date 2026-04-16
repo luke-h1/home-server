@@ -7,7 +7,7 @@ IMAGE="${FAIL2BAN_EXPORTER_IMAGE:-fail2ban-security-exporter:local}"
 PLATFORM="${FAIL2BAN_EXPORTER_PLATFORM:-linux/amd64}"
 ARCHIVE="${FAIL2BAN_EXPORTER_ARCHIVE:-/tmp/fail2ban-security-exporter.tar}"
 
-docker build --platform "${PLATFORM}" -t "${IMAGE}" "${ROOT}/exporters"
+docker build --platform "${PLATFORM}" -t "${IMAGE}" "${ROOT}/exporters/fail2ban"
 docker save "${IMAGE}" -o "${ARCHIVE}"
 
 if command -v k3s >/dev/null 2>&1; then

@@ -97,119 +97,118 @@ data:
       - job_name: blackbox-exporter
         static_configs:
           - targets: ["blackbox-exporter:9115"]
-      # Blackbox HTTP probes disabled
-      # - job_name: blackbox-http
-      #   metrics_path: /probe
-      #   scrape_interval: 2m
-      #   scrape_timeout: 25s
-      #   params:
-      #     module: [http_2xx]
-      #   static_configs:
-      #     - targets:
-      #         - "${IMMICH_PUBLIC_URL}/api/server/ping"
-      #       labels:
-      #         service: immich
-      #     - targets:
-      #         - "${GRAFANA_ROOT_URL}/api/health"
-      #       labels:
-      #         service: grafana
-      #   relabel_configs:
-      #     - source_labels: [__address__]
-      #       target_label: __param_target
-      #     - source_labels: [__param_target]
-      #       target_label: instance
-      #     - target_label: __address__
-      #       replacement: blackbox-exporter:9115
-      # - job_name: blackbox-http-public
-      #   metrics_path: /probe
-      #   scrape_interval: 5m
-      #   scrape_timeout: 25s
-      #   params:
-      #     module: [http_2xx_public]
-      #   static_configs:
-      #     - targets:
-      #         - "https://notes.foam-app.com/api/health"
-      #       labels:
-      #         service: notes-foam-app
-      #     - targets:
-      #         - "https://expo-router.lhowsam.com"
-      #       labels:
-      #         service: expo-router
-      #     - targets:
-      #         - "https://feature-flags-24.talks.lhowsam.com/1"
-      #       labels:
-      #         service: feature-flags-24-talks
-      #     - targets:
-      #         - "https://auth.foam-app.com/api/healthcheck"
-      #       labels:
-      #         service: auth-foam-app
-      #     - targets:
-      #         - "https://auth-staging.foam-app.com/api/healthcheck"
-      #       labels:
-      #         service: auth-staging-foam-app
-      #     - targets:
-      #         - "https://nowplaying-staging.lhowsam.com/api/health"
-      #       labels:
-      #         service: nowplaying-staging
-      #     - targets:
-      #         - "https://nowplaying.lhowsam.com/api/health"
-      #       labels:
-      #         service: nowplaying
-      #     - targets:
-      #         - "https://dev.lhowsam.com"
-      #       labels:
-      #         service: dev-lhowsam
-      #     - targets:
-      #         - "https://lhowsam.com"
-      #       labels:
-      #         service: lhowsam
-      #   relabel_configs:
-      #     - source_labels: [__address__]
-      #       target_label: __param_target
-      #     - source_labels: [__param_target]
-      #       target_label: instance
-      #     - target_label: __address__
-      #       replacement: blackbox-exporter:9115
-      # - job_name: blackbox-http-public-slow
-      #   metrics_path: /probe
-      #   scrape_interval: 10m
-      #   scrape_timeout: 25s
-      #   params:
-      #     module: [http_2xx_public]
-      #   static_configs:
-      #     - targets:
-      #         - "https://chars.lhowsam.com"
-      #       labels:
-      #         service: chars-lhowsam
-      #   relabel_configs:
-      #     - source_labels: [__address__]
-      #       target_label: __param_target
-      #     - source_labels: [__param_target]
-      #       target_label: instance
-      #     - target_label: __address__
-      #       replacement: blackbox-exporter:9115
-      # - job_name: blackbox-http-basic-auth
-      #   metrics_path: /probe
-      #   scrape_interval: 2m
-      #   scrape_timeout: 25s
-      #   params:
-      #     module: [http_2xx_basic_auth]
-      #   static_configs:
-      #     # - targets:
-      #     #     - "https://${ALERTS_DOMAIN}/-/healthy"
-      #     #   labels:
-      #     #     service: alertmanager
-      #     - targets:
-      #         - "https://${PROMETHEUS_DOMAIN}/-/ready"
-      #       labels:
-      #         service: prometheus
-      #   relabel_configs:
-      #     - source_labels: [__address__]
-      #       target_label: __param_target
-      #     - source_labels: [__param_target]
-      #       target_label: instance
-      #     - target_label: __address__
-      #       replacement: blackbox-exporter:9115
+      - job_name: blackbox-http
+        metrics_path: /probe
+        scrape_interval: 2m
+        scrape_timeout: 25s
+        params:
+          module: [http_2xx]
+        static_configs:
+          - targets:
+              - "${IMMICH_PUBLIC_URL}/api/server/ping"
+            labels:
+              service: immich
+          - targets:
+              - "${GRAFANA_ROOT_URL}/api/health"
+            labels:
+              service: grafana
+        relabel_configs:
+          - source_labels: [__address__]
+            target_label: __param_target
+          - source_labels: [__param_target]
+            target_label: instance
+          - target_label: __address__
+            replacement: blackbox-exporter:9115
+      - job_name: blackbox-http-public
+        metrics_path: /probe
+        scrape_interval: 5m
+        scrape_timeout: 25s
+        params:
+          module: [http_2xx_public]
+        static_configs:
+          - targets:
+              - "https://notes.foam-app.com/api/health"
+            labels:
+              service: notes-foam-app
+          - targets:
+              - "https://expo-router.lhowsam.com"
+            labels:
+              service: expo-router
+          - targets:
+              - "https://feature-flags-24.talks.lhowsam.com/1"
+            labels:
+              service: feature-flags-24-talks
+          - targets:
+              - "https://auth.foam-app.com/api/healthcheck"
+            labels:
+              service: auth-foam-app
+          - targets:
+              - "https://auth-staging.foam-app.com/api/healthcheck"
+            labels:
+              service: auth-staging-foam-app
+          - targets:
+              - "https://nowplaying-staging.lhowsam.com/api/health"
+            labels:
+              service: nowplaying-staging
+          - targets:
+              - "https://nowplaying.lhowsam.com/api/health"
+            labels:
+              service: nowplaying
+          - targets:
+              - "https://dev.lhowsam.com"
+            labels:
+              service: dev-lhowsam
+          - targets:
+              - "https://lhowsam.com"
+            labels:
+              service: lhowsam
+        relabel_configs:
+          - source_labels: [__address__]
+            target_label: __param_target
+          - source_labels: [__param_target]
+            target_label: instance
+          - target_label: __address__
+            replacement: blackbox-exporter:9115
+      - job_name: blackbox-http-public-slow
+        metrics_path: /probe
+        scrape_interval: 10m
+        scrape_timeout: 25s
+        params:
+          module: [http_2xx_public]
+        static_configs:
+          - targets:
+              - "https://chars.lhowsam.com"
+            labels:
+              service: chars-lhowsam
+        relabel_configs:
+          - source_labels: [__address__]
+            target_label: __param_target
+          - source_labels: [__param_target]
+            target_label: instance
+          - target_label: __address__
+            replacement: blackbox-exporter:9115
+      - job_name: blackbox-http-basic-auth
+        metrics_path: /probe
+        scrape_interval: 2m
+        scrape_timeout: 25s
+        params:
+          module: [http_2xx_basic_auth]
+        static_configs:
+          # - targets:
+          #     - "https://${ALERTS_DOMAIN}/-/healthy"
+          #   labels:
+          #     service: alertmanager
+          - targets:
+              - "https://${PROMETHEUS_DOMAIN}/-/ready"
+            labels:
+              service: prometheus
+        relabel_configs:
+          - source_labels: [__address__]
+            target_label: __param_target
+          - source_labels: [__param_target]
+            target_label: instance
+          - target_label: __address__
+            replacement: blackbox-exporter:9115
   alerts.yml: |
     groups:
       # - name: external_services_http
