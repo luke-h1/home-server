@@ -115,6 +115,25 @@ spec:
             - |
               set -eu
               idle_sleep=86400
+              next_sync_epoch() {
+                now_hour=$(date -u +%H)
+                now_minute=$(date -u +%M)
+                now_second=$(date -u +%S)
+                now_total=$((10#$now_hour * 3600 + 10#$now_minute * 60 + 10#$now_second))
+                if [ "$now_total" -lt 28800 ]; then
+                  printf '%s\n' "$(date -u -d 'today 08:00:00' +%s)"
+                  return
+                fi
+                if [ "$now_total" -lt 43200 ]; then
+                  printf '%s\n' "$(date -u -d 'today 12:00:00' +%s)"
+                  return
+                fi
+                if [ "$now_total" -lt 54000 ]; then
+                  printf '%s\n' "$(date -u -d 'today 15:00:00' +%s)"
+                  return
+                fi
+                printf '%s\n' "$(date -u -d 'tomorrow 08:00:00' +%s)"
+              }
               while true; do
                 if [ -z "${BUCKET}" ] || [ -z "${AWS_ACCESS_KEY_ID:-}" ]; then
                   echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) library-s3-backup idle (no bucket or credentials)"
@@ -122,15 +141,15 @@ spec:
                   continue
                 fi
                 now=$(date -u +%s)
-                target=$(date -u -d 'next Friday 00:00:00' +%s)
+                target=$(next_sync_epoch)
                 wait_sec=$((target - now))
                 if [ "$wait_sec" -gt 0 ]; then
-                  echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) library-s3-backup sleeping ${wait_sec}s until Fri 00:00 UTC"
+                  echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) library-s3-backup sleeping ${wait_sec}s until 08:00, 12:00, or 15:00 UTC"
                   sleep "$wait_sec"
                 fi
                 dest="s3://${BUCKET}/${PREFIX%/}/library/"
                 echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) syncing /media -> ${dest}"
-                aws s3 sync /media "${dest}" --no-progress || echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) sync failed (will retry next Fri 00:00 UTC)"
+                aws s3 sync /media "${dest}" --no-progress || echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) sync failed (will retry at the next scheduled run)"
               done
           volumeMounts:
             - name: library

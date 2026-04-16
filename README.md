@@ -57,7 +57,7 @@ Domains in `.env` should match tunnel public hostnames + DNS.
 
 Partial: `apply immich` | `apply immich-backup` | `apply monitoring` (Prometheus + Loki stack). Preview: `diff all`.
 
-Weekly **Friday 00:00 UTC:** Postgres dump to S3 + library `aws s3 sync` from the `immich-server` sidecar (RWO PVC).
+Daily **08:00, 12:00, and 15:00 UTC:** Postgres dump to S3 + library `aws s3 sync` from the `immich-server` sidecar (RWO PVC).
 
 ## Cloudflare Tunnel
 
@@ -78,7 +78,7 @@ Optional: `render-config` / `write-config` from `kubernetes/cloudflared-config.y
 
 | Namespace    | What                                                                                                                                                                                                                                                                |
 | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `immich`     | Immich (Traefik `IngressRoute`, auth rate limit), Postgres, Redis, ML (HPA max 1 by default), library S3 sidecar; weekly `pg_dump` CronJob → S3                                                                                                                     |
+| `immich`     | Immich (Traefik `IngressRoute`, auth rate limit), Postgres, Redis, ML (HPA max 1 by default), library S3 sidecar; daily `pg_dump` CronJob → S3                                                                                                                      |
 | `monitoring` | Prometheus, Grafana, Alertmanager (basic auth on Prometheus + alerts ingresses), Loki, Promtail, node-exporter, kube-state-metrics, blackbox, optional Cloudflare exporter, local `fail2ban-security-exporter` DaemonSet (needs host fail2ban) |
 
 Grafana dashboards include community Immich / k8s / Traefik JSON, a **Service Reliability** board for blackbox-monitored services, plus a small **Server security signals** board (`f2b_*` + node/kube metrics) with Loki available for raw pod and auth logs.

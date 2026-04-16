@@ -1,11 +1,11 @@
-# Weekly pg_dump → S3 (Fri 00:00 UTC). Library: immich-server sidecar s3 sync same schedule.
+# Three-times-daily pg_dump → S3 (08:00, 12:00, 15:00 UTC). Library: immich-server sidecar sync on the same schedule.
 apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: immich-pgdump-s3
   namespace: immich
 spec:
-  schedule: "0 0 * * 5"
+  schedule: "0 8,12,15 * * *"
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 2
   failedJobsHistoryLimit: 4
