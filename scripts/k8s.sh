@@ -16,7 +16,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENV_FILE="${K8S_ENV_FILE:-${ROOT}/kubernetes/.env}"
 
-ENV_SUBST_FORMAT='${IMMICH_DOMAIN}${IMMICH_PUBLIC_URL}${GRAFANA_DOMAIN}${PROMETHEUS_DOMAIN}${ALERTS_DOMAIN}${GRAFANA_ROOT_URL}${ALERTS_BASIC_AUTH_USER}${ALERTS_BASIC_AUTH_PASSWORD}${BACKUP_S3_BUCKET}${BACKUP_S3_PREFIX}${AWS_REGION}${ALERTMANAGER_TELEGRAM_CHAT_ID}'
+ENV_SUBST_FORMAT='${IMMICH_DOMAIN}${IMMICH_PUBLIC_URL}${GRAFANA_DOMAIN}${PROMETHEUS_DOMAIN}${ALERTS_DOMAIN}${OTEL_INGEST_DOMAIN}${GRAFANA_ROOT_URL}${ALERTS_BASIC_AUTH_USER}${ALERTS_BASIC_AUTH_PASSWORD}${BACKUP_S3_BUCKET}${BACKUP_S3_PREFIX}${AWS_REGION}${ALERTMANAGER_TELEGRAM_CHAT_ID}'
 
 usage() {
   sed -n '2,20p' "$0" | sed 's/^# //'
@@ -77,6 +77,7 @@ require_domain_vars() {
   : "${GRAFANA_ROOT_URL:?Set GRAFANA_ROOT_URL in ${ENV_FILE}}"
   : "${PROMETHEUS_DOMAIN:?Set PROMETHEUS_DOMAIN in ${ENV_FILE}}"
   : "${ALERTS_DOMAIN:?Set ALERTS_DOMAIN in ${ENV_FILE}}"
+  : "${OTEL_INGEST_DOMAIN:?Set OTEL_INGEST_DOMAIN in ${ENV_FILE}}"
   : "${ALERTS_BASIC_AUTH_USER:?Set ALERTS_BASIC_AUTH_USER in ${ENV_FILE} (Blackbox probe + Traefik basic auth on Alertmanager)}"
   : "${ALERTS_BASIC_AUTH_PASSWORD:?Set ALERTS_BASIC_AUTH_PASSWORD in ${ENV_FILE}}"
 }
@@ -152,6 +153,16 @@ cmd_secrets() {
     --from-literal=admin-user="${GRAFANA_ADMIN_USER}" \
     --from-literal=admin-password="${GRAFANA_ADMIN_PASSWORD}" \
     --dry-run=client -o yaml | kubectl apply -f -
+
+  : "${OTEL_OTLP_BASIC_AUTH_USER:?Set OTEL_OTLP_BASIC_AUTH_USER in ${ENV_FILE}}"
+  : "${OTEL_OTLP_BASIC_AUTH_PASSWORD:?Set OTEL_OTLP_BASIC_AUTH_PASSWORD in ${ENV_FILE}}"
+  local otel_hash
+  otel_hash="$(openssl passwd -apr1 "${OTEL_OTLP_BASIC_AUTH_PASSWORD}")"
+  kubectl create secret generic otel-collector-basic-auth \
+    -n monitoring \
+    --from-literal=users="${OTEL_OTLP_BASIC_AUTH_USER}:${otel_hash}" \
+    --dry-run=client -o yaml | kubectl apply -f -
+  echo "otel-collector-basic-auth applied (OTLP HTTP auth on ${OTEL_INGEST_DOMAIN})."
 
   : "${ALERTS_BASIC_AUTH_USER:?Set ALERTS_BASIC_AUTH_USER in ${ENV_FILE} (Traefik basic auth for ${ALERTS_DOMAIN:-alerts})}"
   : "${ALERTS_BASIC_AUTH_PASSWORD:?Set ALERTS_BASIC_AUTH_PASSWORD in ${ENV_FILE}}"

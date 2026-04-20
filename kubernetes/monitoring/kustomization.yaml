@@ -10,6 +10,7 @@ configMapGenerator:
   - name: grafana-dashboard-apps
     files:
       - dashboards/immich-overview.json
+      - dashboards/foam-proxy-overview.json
   - name: grafana-dashboard-infra
     files:
       - dashboards/service-reliability.json
@@ -42,6 +43,10 @@ resources:
   - loki-config.yaml
   - loki.yaml
   - promtail.yaml
+  - otel-collector-config.yaml
+  - otel-collector.yaml
+  - otel-collector-service.yaml
+  - ingress-otel-collector.yaml
   - grafana-datasource.yaml
   - grafana-dashboard-providers.yaml
   - grafana.yaml

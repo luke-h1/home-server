@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector-config
+  namespace: monitoring
+data:
+  collector.yaml: |
+    extensions:
+      basicauth/server:
+        htpasswd:
+          file: /etc/otel/auth/users
+
+    receivers:
+      otlp:
+        protocols:
+          http:
+            endpoint: 0.0.0.0:4318
+            auth:
+              authenticator: basicauth/server
+
+    processors:
+      memory_limiter:
+        check_interval: 1s
+        limit_mib: 192
+        spike_limit_mib: 64
+      batch:
+        send_batch_size: 1024
+        timeout: 10s
+
+    exporters:
+      prometheus:
+        endpoint: 0.0.0.0:9464
+        resource_to_telemetry_conversion:
+          enabled: true
+
+    service:
+      extensions: [basicauth/server]
+      pipelines:
+        metrics:
+          receivers: [otlp]
+          processors: [memory_limiter, batch]
+          exporters: [prometheus]
