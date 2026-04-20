@@ -7,6 +7,8 @@ metadata:
     app: cloudflare-exporter
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: cloudflare-exporter
@@ -17,7 +19,7 @@ spec:
     spec:
       containers:
         - name: exporter
-          image: ghcr.io/lablabs/cloudflare_exporter:cloudflare-exporter-0.2.3
+          image: ghcr.io/lablabs/cloudflare_exporter
           ports:
             - containerPort: 8080
               name: http

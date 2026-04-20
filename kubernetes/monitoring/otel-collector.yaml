@@ -7,6 +7,8 @@ metadata:
     app: otel-collector
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: otel-collector
@@ -34,10 +36,10 @@ spec:
           resources:
             requests:
               cpu: 50m
-              memory: 128Mi
+              memory: 16Mi
             limits:
               cpu: 300m
-              memory: 256Mi
+              memory: 96Mi
       volumes:
         - name: config
           configMap:

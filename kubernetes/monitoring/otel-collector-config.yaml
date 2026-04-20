@@ -21,10 +21,10 @@ data:
     processors:
       memory_limiter:
         check_interval: 1s
-        limit_mib: 192
-        spike_limit_mib: 64
+        limit_mib: 64
+        spike_limit_mib: 16
       batch:
-        send_batch_size: 1024
+        send_batch_size: 512
         timeout: 10s
 
     exporters:
