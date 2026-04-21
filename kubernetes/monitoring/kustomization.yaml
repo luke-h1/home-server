@@ -14,7 +14,6 @@ configMapGenerator:
   - name: grafana-dashboard-infra
     files:
       - dashboards/service-reliability.json
-      - dashboards/otel-collector-health.json
       - dashboards/node-exporter-full.json
       - dashboards/kube-state-metrics.json
       - dashboards/blackbox-exporter.json
@@ -44,10 +43,7 @@ resources:
   - loki-config.yaml
   - loki.yaml
   - promtail.yaml
-  - otel-collector-config.yaml
-  - otel-collector.yaml
-  - otel-collector-service.yaml
-  - ingress-otel-collector.yaml
+  - pushgateway.yaml
   - grafana-datasource.yaml
   - grafana-dashboard-providers.yaml
   - grafana.yaml
@@ -55,5 +51,7 @@ resources:
   - ingress-grafana.yaml
   - ingress-prometheus.yaml
   - middleware-prometheus-auth.yaml
+  - middleware-pushgateway-auth.yaml
+  - ingress-pushgateway.yaml
   - middleware-alertmanager-auth.yaml
   - ingress-alertmanager.yaml

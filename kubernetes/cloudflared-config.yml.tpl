@@ -11,4 +11,6 @@ ingress:
     service: ${CLOUDFLARE_TUNNEL_ORIGIN}
   - hostname: ${ALERTS_DOMAIN}
     service: ${CLOUDFLARE_TUNNEL_ORIGIN}
+  - hostname: ${PUSHGATEWAY_DOMAIN}
+    service: ${CLOUDFLARE_TUNNEL_ORIGIN}
   - service: http_status:404

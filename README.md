@@ -40,8 +40,8 @@ cp kubernetes/.env.example kubernetes/.env
 
 Fill in at least:
 
-- **URLs:** `IMMICH_DOMAIN`, `IMMICH_PUBLIC_URL`, `GRAFANA_DOMAIN`, `GRAFANA_ROOT_URL`, `PROMETHEUS_DOMAIN`, `ALERTS_DOMAIN`
-- **Secrets:** `IMMICH_DB_PASSWORD`, `GRAFANA_ADMIN_*`, `ALERTS_BASIC_AUTH_*` (Alertmanager + Prometheus ingress; Blackbox probes), `ALERTMANAGER_TELEGRAM_*` (Alertmanager notifications)
+- **URLs:** `IMMICH_DOMAIN`, `IMMICH_PUBLIC_URL`, `GRAFANA_DOMAIN`, `GRAFANA_ROOT_URL`, `PROMETHEUS_DOMAIN`, `ALERTS_DOMAIN`, `PUSHGATEWAY_DOMAIN`
+- **Secrets:** `IMMICH_DB_PASSWORD`, `GRAFANA_ADMIN_*`, `ALERTS_BASIC_AUTH_*` (Alertmanager + Prometheus ingress; Blackbox probes), `PUSHGATEWAY_BASIC_AUTH_*` (Pushgateway ingress), `ALERTMANAGER_TELEGRAM_*` (Alertmanager notifications)
 - **S3 backups:** `BACKUP_S3_BUCKET`, `BACKUP_S3_PREFIX`, `AWS_REGION`, optional `BACKUP_S3_ACCESS_KEY_ID` / `BACKUP_S3_SECRET_ACCESS_KEY` for `./scripts/k8s.sh secrets`
 - **Tunnel:** `CLOUDFLARE_TUNNEL_TOKEN`, `CLOUDFLARE_TUNNEL_ORIGIN` (default `http://127.0.0.1:80` → Traefik)
 - **Optional:** `CLOUDFLARE_EXPORTER_API_TOKEN`, `CLOUDFLARE_ACCOUNT_IDS` for the Cloudflare exporter
@@ -79,7 +79,7 @@ Optional: `render-config` / `write-config` from `kubernetes/cloudflared-config.y
 | Namespace    | What                                                                                                                                                                                                                                                                |
 | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `immich`     | Immich (Traefik `IngressRoute`, auth rate limit), Postgres, Redis, ML (HPA max 1 by default), library S3 sidecar; daily `pg_dump` CronJob → S3                                                                                                                      |
-| `monitoring` | Prometheus, Grafana, Alertmanager (basic auth on Prometheus + alerts ingresses), Loki, Promtail, node-exporter, kube-state-metrics, blackbox, optional Cloudflare exporter, local `fail2ban-security-exporter` DaemonSet (needs host fail2ban) |
+| `monitoring` | Prometheus, Grafana, Alertmanager (basic auth on Prometheus + alerts ingresses), Pushgateway (basic auth ingress for foam-proxy), Loki, Promtail, node-exporter, kube-state-metrics, blackbox, optional Cloudflare exporter, local `fail2ban-security-exporter` DaemonSet (needs host fail2ban) |
 
 Grafana dashboards include community Immich / k8s / Traefik JSON, a **Service Reliability** board for blackbox-monitored services, plus a small **Server security signals** board (`f2b_*` + node/kube metrics) with Loki available for raw pod and auth logs.
 
@@ -114,6 +114,7 @@ Alert delivery defaults to Telegram once `ALERTMANAGER_TELEGRAM_BOT_TOKEN` and `
 | --------------------------------------------------- | ----------------------------------------------------- |
 | `./scripts/k8s.sh restart`                          | Rollout restart deployments in `immich`, `monitoring` |
 | `./scripts/k8s.sh backup-suspend` / `backup-resume` | Immich pgdump CronJob                                 |
+| `./scripts/reclaim-pvc.sh list` / `reclaim NS/PVC --yes` | Inspect and reclaim local-path PVC disk usage   |
 | `./scripts/restore-immich-from-s3.sh`               | Restore DB from S3 (see script header)                |
 | `./scripts/snapshot-k3s-s3.sh`                      | k3s etcd snapshot → S3 (server, root)                 |
 | `./scripts/k8s.sh delete immich` \| `monitoring`    | Destructive                                           |

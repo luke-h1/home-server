@@ -12,7 +12,7 @@
       }
     ]
   },
-  "description": "OTLP-ingested foam-proxy metrics scraped from the in-cluster OTel collector by Prometheus.",
+  "description": "Prometheus-format foam-proxy metrics pushed into Pushgateway and scraped by Prometheus.",
   "editable": true,
   "graphTooltip": 1,
   "id": null,
@@ -22,7 +22,7 @@
       "id": 1,
       "options": {
         "code": { "language": "markdown", "showLineNumbers": false, "showMiniMap": false },
-        "content": "Requests and Twitch upstream activity for `foam-proxy`. Metrics arrive via OTLP HTTP at the collector, then Prometheus scrapes the collector's Prometheus exporter.",
+        "content": "Requests and Twitch upstream activity for `foam-proxy`. The Lambda pushes Prometheus-format metrics into Pushgateway, and Prometheus scrapes Pushgateway.",
         "mode": "markdown"
       },
       "title": "Scope",
@@ -417,7 +417,7 @@
   ],
   "refresh": "30s",
   "schemaVersion": 39,
-  "tags": ["foam", "proxy", "otel"],
+  "tags": ["foam", "proxy", "pushgateway", "prometheus"],
   "templating": {
     "list": [
       {

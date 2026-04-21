@@ -1,19 +1,20 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: otel-collector
+  name: pushgateway
   namespace: monitoring
   annotations:
     kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/router.middlewares: monitoring-pushgateway-auth@kubernetescrd
 spec:
   rules:
-    - host: "${OTEL_INGEST_DOMAIN}"
+    - host: "${PUSHGATEWAY_DOMAIN}"
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: otel-collector
+                name: pushgateway
                 port:
-                  number: 4318
+                  number: 9091
