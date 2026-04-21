@@ -66,7 +66,7 @@
         "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
         "textMode": "auto"
       },
-      "pluginVersion": "11.2.0",
+      "pluginVersion": "12.4.2",
       "targets": [
         {
           "datasource": {"type": "prometheus", "uid": "prometheus"},
@@ -103,7 +103,7 @@
         "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
         "textMode": "auto"
       },
-      "pluginVersion": "11.2.0",
+      "pluginVersion": "12.4.2",
       "targets": [
         {
           "expr": "sum(node_filesystem_readonly{fstype!~\"tmpfs|fuse.lxcfs|squashfs\"})",
@@ -141,7 +141,7 @@
         "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
         "textMode": "auto"
       },
-      "pluginVersion": "11.2.0",
+      "pluginVersion": "12.4.2",
       "targets": [
         {
           "expr": "max(100 * (1 - node_filesystem_avail_bytes{fstype!~\"tmpfs|fuse.lxcfs|squashfs\",mountpoint!~\"/run.*|/snap.*\"} / node_filesystem_size_bytes))",
@@ -177,7 +177,7 @@
         "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
         "textMode": "auto"
       },
-      "pluginVersion": "11.2.0",
+      "pluginVersion": "12.4.2",
       "targets": [
         {
           "expr": "sum(increase(kube_pod_container_status_restarts_total[6h]))",
@@ -212,7 +212,7 @@
         "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
         "textMode": "value_and_name"
       },
-      "pluginVersion": "11.2.0",
+      "pluginVersion": "12.4.2",
       "targets": [
         {
           "expr": "sum(kube_node_spec_unschedulable)",
@@ -269,7 +269,7 @@
         "legend": {"calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true},
         "tooltip": {"mode": "multi", "sort": "desc"}
       },
-      "pluginVersion": "11.2.0",
+      "pluginVersion": "12.4.2",
       "targets": [
         {
           "expr": "node_load1",
@@ -321,7 +321,7 @@
         "legend": {"calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true},
         "tooltip": {"mode": "multi", "sort": "desc"}
       },
-      "pluginVersion": "11.2.0",
+      "pluginVersion": "12.4.2",
       "targets": [
         {
           "expr": "sum without (device) (irate(node_network_receive_errs_total[$__rate_interval]) + irate(node_network_transmit_errs_total[$__rate_interval]))",
@@ -356,7 +356,7 @@
         "legend": {"calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true},
         "tooltip": {"mode": "multi", "sort": "desc"}
       },
-      "pluginVersion": "11.2.0",
+      "pluginVersion": "12.4.2",
       "targets": [
         {
           "expr": "irate(node_netstat_Tcp_RetransSegs[$__rate_interval])",
@@ -390,7 +390,7 @@
         "legend": {"calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true},
         "tooltip": {"mode": "multi", "sort": "desc"}
       },
-      "pluginVersion": "11.2.0",
+      "pluginVersion": "12.4.2",
       "targets": [
         {
           "expr": "irate(node_context_switches_total[$__rate_interval])",
@@ -434,7 +434,7 @@
         "showHeader": true,
         "sortBy": []
       },
-      "pluginVersion": "11.2.0",
+      "pluginVersion": "12.4.2",
       "targets": [
         {
           "expr": "kube_node_status_condition{condition=~\"DiskPressure|MemoryPressure|PIDPressure\",status=\"true\"}",
@@ -481,7 +481,7 @@
       "options": {
         "showHeader": true
       },
-      "pluginVersion": "11.2.0",
+      "pluginVersion": "12.4.2",
       "targets": [
         {
           "expr": "100 * (1 - node_filesystem_avail_bytes{fstype!~\"tmpfs|fuse.lxcfs|squashfs\"} / node_filesystem_size_bytes)",
@@ -535,7 +535,7 @@
         "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
         "textMode": "auto"
       },
-      "pluginVersion": "11.2.0",
+      "pluginVersion": "12.4.2",
       "targets": [
         {
           "expr": "f2b_up",
@@ -571,7 +571,7 @@
         "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
         "textMode": "auto"
       },
-      "pluginVersion": "11.2.0",
+      "pluginVersion": "12.4.2",
       "targets": [
         {
           "expr": "sum(f2b_errors)",
@@ -605,7 +605,7 @@
         "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false},
         "textMode": "auto"
       },
-      "pluginVersion": "11.2.0",
+      "pluginVersion": "12.4.2",
       "targets": [
         {
           "expr": "max(f2b_jail_count)",
@@ -638,7 +638,7 @@
         "legend": {"calcs": ["last", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true},
         "tooltip": {"mode": "multi", "sort": "desc"}
       },
-      "pluginVersion": "11.2.0",
+      "pluginVersion": "12.4.2",
       "targets": [
         {
           "expr": "f2b_jail_banned_current",
@@ -672,7 +672,7 @@
         "legend": {"calcs": ["last", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true},
         "tooltip": {"mode": "multi", "sort": "desc"}
       },
-      "pluginVersion": "11.2.0",
+      "pluginVersion": "12.4.2",
       "targets": [
         {
           "expr": "f2b_jail_failed_current",
@@ -699,7 +699,7 @@
       "gridPos": {"h": 6, "w": 24, "x": 0, "y": 54},
       "id": 55,
       "options": {"showHeader": true},
-      "pluginVersion": "11.2.0",
+      "pluginVersion": "12.4.2",
       "targets": [
         {
           "expr": "f2b_jail_banned_total",
@@ -734,7 +734,7 @@
         "sortOrder": "Descending",
         "wrapLogMessage": true
       },
-      "pluginVersion": "11.2.0",
+      "pluginVersion": "12.4.2",
       "targets": [
         {
           "datasource": {"type": "loki", "uid": "loki"},

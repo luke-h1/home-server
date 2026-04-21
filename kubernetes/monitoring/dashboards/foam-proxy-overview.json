@@ -50,7 +50,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum(rate(foam_proxy_requests_total{service_name=\"foam-proxy\",app=~\"$app\"}[5m]))",
+          "expr": "sum(rate(foam_proxy_requests_total{service_name=\"foam-proxy\",environment=~\"$environment\",app=~\"$app\"}[5m]))",
           "refId": "A"
         }
       ],
@@ -90,7 +90,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "100 * sum(rate(foam_proxy_requests_total{service_name=\"foam-proxy\",app=~\"$app\",status_code_class=~\"4xx|5xx\"}[5m])) / clamp_min(sum(rate(foam_proxy_requests_total{service_name=\"foam-proxy\",app=~\"$app\"}[5m])), 0.0001)",
+          "expr": "100 * sum(rate(foam_proxy_requests_total{service_name=\"foam-proxy\",environment=~\"$environment\",app=~\"$app\",status_code_class=~\"4xx|5xx\"}[5m])) / clamp_min(sum(rate(foam_proxy_requests_total{service_name=\"foam-proxy\",environment=~\"$environment\",app=~\"$app\"}[5m])), 0.0001)",
           "refId": "A"
         }
       ],
@@ -128,7 +128,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "histogram_quantile(0.95, sum by (le) (rate(foam_proxy_request_duration_seconds_bucket{service_name=\"foam-proxy\",app=~\"$app\"}[5m])))",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(foam_proxy_request_duration_seconds_bucket{service_name=\"foam-proxy\",environment=~\"$environment\",app=~\"$app\"}[5m])))",
           "refId": "A"
         }
       ],
@@ -157,7 +157,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum(rate(foam_proxy_twitch_requests_total{service_name=\"foam-proxy\",app=~\"$app\"}[5m]))",
+          "expr": "sum(rate(foam_proxy_twitch_requests_total{service_name=\"foam-proxy\",environment=~\"$environment\",app=~\"$app\"}[5m]))",
           "refId": "A"
         }
       ],
@@ -186,7 +186,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum(rate(foam_proxy_requests_total{service_name=\"foam-proxy\",app=~\"$app\",route=\"/api/version\"}[5m]))",
+          "expr": "sum(rate(foam_proxy_requests_total{service_name=\"foam-proxy\",environment=~\"$environment\",route=\"/api/version\"}[5m]))",
           "refId": "A"
         }
       ],
@@ -217,12 +217,12 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum by (app) (rate(foam_proxy_requests_total{service_name=\"foam-proxy\",app=~\"$app\",route=\"/api/version\"}[5m]))",
-          "legendFormat": "{{app}}",
+          "expr": "sum by (route) (rate(foam_proxy_requests_total{service_name=\"foam-proxy\",environment=~\"$environment\",route=~\"/api/version|/api/healthcheck\"}[5m]))",
+          "legendFormat": "{{route}}",
           "refId": "A"
         }
       ],
-      "title": "Version requests by app",
+      "title": "Version and healthcheck requests by route",
       "type": "timeseries"
     },
     {
@@ -249,7 +249,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum by (app) (rate(foam_proxy_requests_total{service_name=\"foam-proxy\",app=~\"$app\"}[5m]))",
+          "expr": "sum by (app) (rate(foam_proxy_requests_total{service_name=\"foam-proxy\",environment=~\"$environment\",app=~\"$app\"}[5m]))",
           "legendFormat": "{{app}}",
           "refId": "A"
         }
@@ -281,7 +281,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "100 * sum by (app) (rate(foam_proxy_requests_total{service_name=\"foam-proxy\",app=~\"$app\",status_code_class=~\"4xx|5xx\"}[5m])) / clamp_min(sum by (app) (rate(foam_proxy_requests_total{service_name=\"foam-proxy\",app=~\"$app\"}[5m])), 0.0001)",
+          "expr": "100 * sum by (app) (rate(foam_proxy_requests_total{service_name=\"foam-proxy\",environment=~\"$environment\",app=~\"$app\",status_code_class=~\"4xx|5xx\"}[5m])) / clamp_min(sum by (app) (rate(foam_proxy_requests_total{service_name=\"foam-proxy\",environment=~\"$environment\",app=~\"$app\"}[5m])), 0.0001)",
           "legendFormat": "{{app}}",
           "refId": "A"
         }
@@ -313,7 +313,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "histogram_quantile(0.95, sum by (le, app) (rate(foam_proxy_request_duration_seconds_bucket{service_name=\"foam-proxy\",app=~\"$app\"}[5m])))",
+          "expr": "histogram_quantile(0.95, sum by (le, app) (rate(foam_proxy_request_duration_seconds_bucket{service_name=\"foam-proxy\",environment=~\"$environment\",app=~\"$app\"}[5m])))",
           "legendFormat": "{{app}}",
           "refId": "A"
         }
@@ -345,7 +345,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum by (operation, outcome) (rate(foam_proxy_twitch_requests_total{service_name=\"foam-proxy\",app=~\"$app\"}[5m]))",
+          "expr": "sum by (operation, outcome) (rate(foam_proxy_twitch_requests_total{service_name=\"foam-proxy\",environment=~\"$environment\",app=~\"$app\"}[5m]))",
           "legendFormat": "{{operation}} / {{outcome}}",
           "refId": "A"
         }
@@ -377,7 +377,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "histogram_quantile(0.95, sum by (le, operation) (rate(foam_proxy_twitch_request_duration_seconds_bucket{service_name=\"foam-proxy\",app=~\"$app\"}[5m])))",
+          "expr": "histogram_quantile(0.95, sum by (le, operation) (rate(foam_proxy_twitch_request_duration_seconds_bucket{service_name=\"foam-proxy\",environment=~\"$environment\",app=~\"$app\"}[5m])))",
           "legendFormat": "{{operation}}",
           "refId": "A"
         }
@@ -405,7 +405,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "max by (app, git_sha, environment) (foam_proxy_config_info{service_name=\"foam-proxy\"})",
+          "expr": "max by (app, git_sha, environment) (foam_proxy_config_info{service_name=\"foam-proxy\",environment=~\"$environment\",app=~\"$app\"})",
           "format": "table",
           "instant": true,
           "refId": "A"
@@ -422,8 +422,27 @@
     "list": [
       {
         "current": { "selected": true, "text": ["All"], "value": ["$__all"] },
+        "allValue": ".*",
         "datasource": { "type": "prometheus", "uid": "prometheus" },
-        "definition": "label_values(foam_proxy_requests_total{service_name=\"foam-proxy\"}, app)",
+        "definition": "label_values(foam_proxy_config_info{service_name=\"foam-proxy\"}, environment)",
+        "includeAll": true,
+        "label": "Environment",
+        "multi": true,
+        "name": "environment",
+        "options": [],
+        "query": {
+          "qryType": 1,
+          "query": "label_values(foam_proxy_config_info{service_name=\"foam-proxy\"}, environment)",
+          "refId": "Prometheus-environment-Variable-Query"
+        },
+        "refresh": 1,
+        "type": "query"
+      },
+      {
+        "current": { "selected": true, "text": ["All"], "value": ["$__all"] },
+        "allValue": ".*",
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "definition": "label_values(foam_proxy_config_info{service_name=\"foam-proxy\",environment=~\"$environment\"}, app)",
         "includeAll": true,
         "label": "App",
         "multi": true,
@@ -431,7 +450,7 @@
         "options": [],
         "query": {
           "qryType": 1,
-          "query": "label_values(foam_proxy_requests_total{service_name=\"foam-proxy\"}, app)",
+          "query": "label_values(foam_proxy_config_info{service_name=\"foam-proxy\",environment=~\"$environment\"}, app)",
           "refId": "Prometheus-app-Variable-Query"
         },
         "refresh": 1,
@@ -443,5 +462,5 @@
   "timezone": "browser",
   "title": "Foam Proxy Overview",
   "uid": "foam-proxy-overview",
-  "version": 2
+  "version": 4
 }
