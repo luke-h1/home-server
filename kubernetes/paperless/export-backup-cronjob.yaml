@@ -1,0 +1,111 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: paperless-export-s3
+  namespace: paperless
+spec:
+  schedule: "0 3 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 4
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      ttlSecondsAfterFinished: 86400
+      template:
+        spec:
+          restartPolicy: OnFailure
+          initContainers:
+            - name: export
+              image: ghcr.io/paperless-ngx/paperless-ngx:latest
+              imagePullPolicy: IfNotPresent
+              envFrom:
+                - configMapRef:
+                    name: paperless-env
+              env:
+                - name: PAPERLESS_DBPASS
+                  valueFrom:
+                    secretKeyRef:
+                      name: paperless-secrets
+                      key: DB_PASSWORD
+                - name: PAPERLESS_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: paperless-secrets
+                      key: PAPERLESS_SECRET_KEY
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -eu
+                  out="/export/paperless-export-$(date -u +%Y%m%dT%H%MZ).zip"
+                  cd /usr/src/paperless/src
+                  python3 manage.py document_exporter /export --zip
+                  latest_zip="$(find /export -maxdepth 1 -type f -name 'export-*.zip' | sort | tail -n 1)"
+                  [ -n "${latest_zip}" ]
+                  mv "${latest_zip}" "${out}"
+                  ls -lh "${out}"
+              volumeMounts:
+                - name: data
+                  mountPath: /usr/src/paperless/data
+                - name: media
+                  mountPath: /usr/src/paperless/media
+                - name: export
+                  mountPath: /export
+              resources:
+                requests:
+                  cpu: 200m
+                  memory: 512Mi
+                limits:
+                  cpu: "1"
+                  memory: 2Gi
+          containers:
+            - name: s3-upload
+              image: amazon/aws-cli:2.17.44
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: backup-s3-credentials
+                      key: AWS_ACCESS_KEY_ID
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: backup-s3-credentials
+                      key: AWS_SECRET_ACCESS_KEY
+                - name: AWS_DEFAULT_REGION
+                  value: "${AWS_REGION}"
+                - name: BUCKET
+                  value: "${BACKUP_S3_BUCKET}"
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -eu
+                  latest_zip="$(find /export -maxdepth 1 -type f -name 'paperless-export-*.zip' | sort | tail -n 1)"
+                  [ -n "${latest_zip}" ]
+                  key="documents/exports/$(basename "${latest_zip}")"
+                  aws s3 cp "${latest_zip}" "s3://${BUCKET}/${key}"
+                  aws s3 cp "${latest_zip}" "s3://${BUCKET}/documents/exports/paperless-export-latest.zip"
+                  echo "Uploaded s3://${BUCKET}/${key}"
+              volumeMounts:
+                - name: export
+                  mountPath: /export
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 128Mi
+                limits:
+                  cpu: 300m
+                  memory: 512Mi
+          volumes:
+            - name: data
+              persistentVolumeClaim:
+                claimName: paperless-data-pvc
+            - name: media
+              persistentVolumeClaim:
+                claimName: paperless-media-pvc
+            - name: export
+              persistentVolumeClaim:
+                claimName: paperless-export-pvc

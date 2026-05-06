@@ -103,6 +103,62 @@ data:
               namespace: immich
               endpoint: metrics-api
               service_name: immich-server
+      - job_name: n8n-main
+        scrape_interval: 45s
+        metrics_path: /metrics
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - n8n
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_instance]
+            action: keep
+            regex: n8n
+          - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_component]
+            action: keep
+            regex: main
+          - source_labels: [__meta_kubernetes_pod_phase]
+            action: keep
+            regex: Running
+          - source_labels: [__meta_kubernetes_pod_ip]
+            regex: (.+)
+            replacement: ${1}:5678
+            target_label: __address__
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
+          - target_label: service_name
+            replacement: n8n-main
+      - job_name: n8n-worker
+        scrape_interval: 45s
+        metrics_path: /metrics
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - n8n
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_instance]
+            action: keep
+            regex: n8n
+          - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_component]
+            action: keep
+            regex: worker
+          - source_labels: [__meta_kubernetes_pod_phase]
+            action: keep
+            regex: Running
+          - source_labels: [__meta_kubernetes_pod_ip]
+            regex: (.+)
+            replacement: ${1}:5678
+            target_label: __address__
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
+          - target_label: service_name
+            replacement: n8n-worker
       - job_name: blackbox-exporter
         static_configs:
           - targets: ["blackbox-exporter:9115"]
@@ -117,6 +173,14 @@ data:
               - "${IMMICH_PUBLIC_URL}/api/server/ping"
             labels:
               service: immich
+          - targets:
+              - "https://${DOCUMENT_DOMAIN}/accounts/login/"
+            labels:
+              service: paperless
+          - targets:
+              - "https://${N8N_DOMAIN}"
+            labels:
+              service: n8n
           - targets:
               - "${GRAFANA_ROOT_URL}/api/health"
             labels:
@@ -251,6 +315,51 @@ data:
             annotations:
               summary: "Immich server metrics target is down"
               description: "Prometheus cannot scrape immich-server in the cluster (in-cluster availability)."
+          - alert: N8NMainDown
+            expr: up{job="n8n-main"} == 0
+            for: 5m
+            labels:
+              severity: critical
+              service: n8n
+            annotations:
+              summary: "n8n main metrics target is down"
+              description: "Prometheus cannot scrape n8n main on /metrics in the cluster."
+          - alert: N8NWorkerDown
+            expr: sum(up{job="n8n-worker"}) < 1
+            for: 5m
+            labels:
+              severity: warning
+              service: n8n
+            annotations:
+              summary: "n8n worker metrics target is down"
+              description: "Prometheus cannot scrape any n8n worker on /metrics in the cluster."
+          - alert: PaperlessPodNotReady
+            expr: max(kube_pod_status_ready{namespace="paperless", condition="true", pod=~"paperless-.*"}) < 1
+            for: 5m
+            labels:
+              severity: critical
+              service: paperless
+            annotations:
+              summary: "Paperless web pod is not ready"
+              description: "No ready Paperless web pod is available in the paperless namespace."
+          - alert: PaperlessPublicProbeFailed
+            expr: probe_success{job="blackbox-http", service="paperless"} == 0
+            for: 5m
+            labels:
+              severity: error
+              service: paperless
+            annotations:
+              summary: "Paperless public endpoint probe failed"
+              description: "Blackbox probe for documents.lhowsam.com is failing."
+          - alert: N8NPublicProbeFailed
+            expr: probe_success{job="blackbox-http", service="n8n"} == 0
+            for: 5m
+            labels:
+              severity: error
+              service: n8n
+            annotations:
+              summary: "n8n public endpoint probe failed"
+              description: "Blackbox probe for n8n.lhowsam.com is failing."
 
       - name: monitoring_infrastructure
         rules:

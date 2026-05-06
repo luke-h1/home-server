@@ -9,6 +9,7 @@
 #   INSTALL_FAIL2BAN=1|0          — fail2ban for sshd (default 1)
 #   HARDEN_BASELINE=1|0           — unattended-upgrades, sysctl, kubectl helpers in shell rc (default 1)
 #   INSTALL_ZSH=1|0               — install zsh and chsh root to zsh (default 1)
+#   INSTALL_OH_MY_ZSH=1|0         — install oh-my-zsh + common plugins for root (default 1)
 #   HARDEN_SSH=1|0                — disable password SSH if /root/.ssh/authorized_keys exists (default 0)
 #   DISABLE_TRAEFIK=1|0           — pass --disable=traefik to k3s (default 0)
 #   K3S_CHANNEL=stable|latest|... — INSTALL_K3S_CHANNEL (default stable)
@@ -25,6 +26,7 @@ set -euo pipefail
 : "${INSTALL_FAIL2BAN:=1}"
 : "${HARDEN_BASELINE:=1}"
 : "${INSTALL_ZSH:=1}"
+: "${INSTALL_OH_MY_ZSH:=1}"
 : "${HARDEN_SSH:=0}"
 : "${DISABLE_TRAEFIK:=0}"
 : "${K3S_CHANNEL:=stable}"
@@ -114,6 +116,31 @@ install_zsh_for_root() {
   if [[ "${current_shell}" != "${zsh_bin}" ]]; then
     chsh -s "${zsh_bin}" root
     echo "Root login shell set to zsh (${zsh_bin}). New SSH sessions will use zsh."
+  fi
+}
+
+install_oh_my_zsh_for_root() {
+  [[ "${INSTALL_ZSH}" == "1" ]] || return 0
+  [[ "${INSTALL_OH_MY_ZSH}" == "1" ]] || return 0
+
+  if [[ ! -d /root/.oh-my-zsh ]]; then
+    local tmp
+    tmp="$(mktemp)"
+    curl -fsSL -o "${tmp}" https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh
+    RUNZSH=no CHSH=no KEEP_ZSHRC=yes sh "${tmp}"
+    rm -f "${tmp}"
+  fi
+
+  install -d -m 0755 /root/.oh-my-zsh/custom/plugins
+
+  if [[ ! -d /root/.oh-my-zsh/custom/plugins/zsh-autosuggestions ]]; then
+    git clone https://github.com/zsh-users/zsh-autosuggestions \
+      /root/.oh-my-zsh/custom/plugins/zsh-autosuggestions
+  fi
+
+  if [[ ! -d /root/.oh-my-zsh/custom/plugins/fast-syntax-highlighting ]]; then
+    git clone https://github.com/zdharma-continuum/fast-syntax-highlighting \
+      /root/.oh-my-zsh/custom/plugins/fast-syntax-highlighting
   fi
 }
 
@@ -249,19 +276,43 @@ kubectl_shell_helpers() {
   install_kubectl_k_command
 
   if [[ "${INSTALL_ZSH}" == "1" ]]; then
-    local zrc="/root/.zshrc"
-    touch "${zrc}"
-    grep -q "home-server setup-server" "${zrc}" 2>/dev/null || {
-      cat >>"${zrc}" <<'EOF'
-
-# home-server setup-server
+    cat >/root/.zshenv <<'EOF'
 export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+EOF
+
+    cat >/root/.zshrc <<'EOF'
+export ZSH="$HOME/.oh-my-zsh"
+ZSH_THEME="cloud"
+CASE_SENSITIVE="true"
+DISABLE_AUTO_UPDATE="true"
+ZSH_DISABLE_COMPFIX="true"
+plugins=(git zsh-autosuggestions fast-syntax-highlighting)
+
+source "$ZSH/oh-my-zsh.sh"
+
+# k3s kubeconfig for interactive shells too; non-interactive shells use ~/.zshenv.
+export KUBECONFIG="${KUBECONFIG:-/etc/rancher/k3s/k3s.yaml}"
+
+# home-server setup-server — k is /usr/local/bin/k -> kubectl
 if command -v kubectl >/dev/null 2>&1; then
   source <(kubectl completion zsh)
   compdef _kubectl k 2>/dev/null || true
 fi
+
+alias k="kubectl"
+alias g="git"
+alias gst="git status"
+alias gss="git status -s"
+alias gl="git pull"
+alias gp="git push"
+alias ga="git add"
+alias gc="git commit -v"
+alias gco="git checkout"
+alias gb="git branch"
+alias ll="ls -alF"
+alias la="ls -A"
+alias l="ls -CF"
 EOF
-    }
   else
     local brc="/root/.bashrc"
     touch "${brc}"
@@ -283,6 +334,7 @@ main() {
   harden_baseline
   setup_swap
   install_zsh_for_root
+  install_oh_my_zsh_for_root
   harden_ssh_optional
   install_k3s
   install_helm
@@ -297,7 +349,7 @@ main() {
   fi
   echo "- k3s: systemctl status k3s"
   if [[ "${INSTALL_ZSH}" == "1" ]]; then
-    echo "- shell: root uses zsh; KUBECONFIG + kubectl completion in /root/.zshrc"
+    echo "- shell: root uses zsh + oh-my-zsh; KUBECONFIG in /root/.zshenv; kubectl completion + aliases in /root/.zshrc"
   else
     echo "- kubeconfig: KUBECONFIG + kubectl completion in /root/.bashrc"
   fi

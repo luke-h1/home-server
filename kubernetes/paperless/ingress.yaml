@@ -3,9 +3,8 @@ kind: Ingress
 metadata:
   name: paperless
   namespace: paperless
-  annotations:
-    kubernetes.io/ingress.class: traefik
 spec:
+  ingressClassName: traefik
   rules:
     - host: "${DOCUMENT_DOMAIN}"
       http:
@@ -14,6 +13,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: paperless
+                name: paperless-web
                 port:
                   number: 8000

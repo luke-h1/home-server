@@ -18,5 +18,6 @@ resources:
   - tika.yaml
   - tika-service.yaml
   - paperless.yaml
+  - export-backup-cronjob.yaml
   - paperless-service.yaml
   - ingress.yaml

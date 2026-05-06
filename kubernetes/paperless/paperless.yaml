@@ -71,12 +71,18 @@ spec:
             httpGet:
               path: /
               port: http
+              httpHeaders:
+                - name: Host
+                  value: "${DOCUMENT_DOMAIN}"
             initialDelaySeconds: 20
             periodSeconds: 10
           livenessProbe:
             httpGet:
               path: /
               port: http
+              httpHeaders:
+                - name: Host
+                  value: "${DOCUMENT_DOMAIN}"
             initialDelaySeconds: 60
             periodSeconds: 30
           volumeMounts:
@@ -95,6 +101,88 @@ spec:
             limits:
               cpu: "1"
               memory: 2Gi
+        - name: documents-s3-backup
+          image: amazon/aws-cli:2.17.44
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: backup-s3-credentials
+                  key: AWS_ACCESS_KEY_ID
+                  optional: true
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: backup-s3-credentials
+                  key: AWS_SECRET_ACCESS_KEY
+                  optional: true
+            - name: AWS_DEFAULT_REGION
+              value: "${AWS_REGION}"
+            - name: BUCKET
+              value: "${BACKUP_S3_BUCKET}"
+            - name: PREFIX
+              value: "documents"
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+              sync_sleep=86400
+              next_sync_epoch() {
+                now_total=$((10#$(date -u +%H) * 3600 + 10#$(date -u +%M) * 60 + 10#$(date -u +%S)))
+                target_total=$((2 * 3600))
+                if [ "$now_total" -lt "$target_total" ]; then
+                  printf '%s\n' "$(date -u -d 'today 02:00:00' +%s)"
+                  return
+                fi
+                printf '%s\n' "$(date -u -d 'tomorrow 02:00:00' +%s)"
+              }
+              sync_dir() {
+                src="$1"
+                dest="$2"
+                echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) syncing ${src} -> ${dest}"
+                aws s3 sync "${src}" "${dest}" --no-progress --delete
+              }
+              while true; do
+                if [ -z "${BUCKET}" ] || [ -z "${AWS_ACCESS_KEY_ID:-}" ]; then
+                  echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) documents-s3-backup idle (no bucket or credentials)"
+                  sleep "$sync_sleep"
+                  continue
+                fi
+                now=$(date -u +%s)
+                target=$(next_sync_epoch)
+                wait_sec=$((target - now))
+                if [ "$wait_sec" -gt 0 ]; then
+                  echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) documents-s3-backup sleeping ${wait_sec}s until 02:00 UTC"
+                  sleep "$wait_sec"
+                fi
+                base="s3://${BUCKET}/${PREFIX%/}"
+                sync_dir /documents/data "${base}/data/"
+                sync_dir /documents/media "${base}/media/"
+                sync_dir /documents/consume "${base}/consume/"
+                sync_dir /documents/export "${base}/export/"
+              done
+          volumeMounts:
+            - name: data
+              mountPath: /documents/data
+              readOnly: true
+            - name: media
+              mountPath: /documents/media
+              readOnly: true
+            - name: consume
+              mountPath: /documents/consume
+              readOnly: true
+            - name: export
+              mountPath: /documents/export
+              readOnly: true
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 512Mi
       volumes:
         - name: data
           persistentVolumeClaim:

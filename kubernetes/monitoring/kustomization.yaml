@@ -11,6 +11,7 @@ configMapGenerator:
     files:
       - dashboards/immich-overview.json
       - dashboards/foam-proxy-overview.json
+      - dashboards/document-automation-overview.json
   - name: grafana-dashboard-infra
     files:
       - dashboards/service-reliability.json

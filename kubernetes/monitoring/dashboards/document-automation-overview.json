@@ -1,0 +1,514 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "n8n native Prometheus metrics plus Paperless app health, Kubernetes resource usage, and recent logs.",
+  "editable": true,
+  "graphTooltip": 1,
+  "id": null,
+  "panels": [
+    {
+      "gridPos": { "h": 3, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "options": {
+        "code": { "language": "markdown", "showLineNumbers": false, "showMiniMap": false },
+        "content": "This view combines native `n8n` Prometheus metrics, blackbox uptime for public routes, Kubernetes pod/resource signals for both apps, and Loki logs for `paperless` and `n8n`.",
+        "mode": "markdown"
+      },
+      "title": "Scope",
+      "type": "text"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "background" },
+          "mappings": [
+            { "options": { "0": { "text": "down" }, "1": { "text": "up" } }, "type": "value" }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 3 },
+      "id": 2,
+      "options": {
+        "colorMode": "background_solid",
+        "graphMode": "none",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        { "expr": "max(probe_success{job=\"blackbox-http\", service=\"paperless\"})", "refId": "A" }
+      ],
+      "title": "Paperless public route",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "background" },
+          "mappings": [
+            { "options": { "0": { "text": "down" }, "1": { "text": "up" } }, "type": "value" }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 3 },
+      "id": 3,
+      "options": {
+        "colorMode": "background_solid",
+        "graphMode": "none",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        { "expr": "max(probe_success{job=\"blackbox-http\", service=\"n8n\"})", "refId": "A" }
+      ],
+      "title": "n8n public route",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "background" },
+          "mappings": [
+            { "options": { "0": { "text": "down" }, "1": { "text": "up" } }, "type": "value" }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 3 },
+      "id": 4,
+      "options": {
+        "colorMode": "background_solid",
+        "graphMode": "none",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        { "expr": "max(up{job=\"n8n-main\"})", "refId": "A" }
+      ],
+      "title": "n8n main metrics",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "green", "value": 2 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 3 },
+      "id": 5,
+      "options": {
+        "colorMode": "background_solid",
+        "graphMode": "none",
+        "orientation": "auto",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        { "expr": "sum(up{job=~\"n8n-main|n8n-worker\"})", "refId": "A" }
+      ],
+      "title": "n8n metrics targets up",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 18,
+            "lineInterpolation": "smooth",
+            "showPoints": "never"
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 7 },
+      "id": 6,
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "expr": "100 * avg_over_time(probe_success{job=\"blackbox-http\", service=~\"paperless|n8n\"}[30m])",
+          "legendFormat": "{{service}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Public route availability (30m)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 18,
+            "lineInterpolation": "smooth",
+            "showPoints": "never"
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 7 },
+      "id": 7,
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "expr": "avg_over_time(probe_duration_seconds{job=\"blackbox-http\", service=~\"paperless|n8n\"}[30m])",
+          "legendFormat": "{{service}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Public route latency (30m avg)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "lineInterpolation": "smooth",
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 15 },
+      "id": 8,
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "expr": "sum by (job) (up{job=~\"n8n-main|n8n-worker\"})",
+          "legendFormat": "{{job}}",
+          "refId": "A"
+        }
+      ],
+      "title": "n8n metrics target health",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "lineInterpolation": "smooth",
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 15 },
+      "id": 9,
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "expr": "n8n_scaling_mode_queue_jobs_waiting",
+          "legendFormat": "waiting",
+          "refId": "A"
+        },
+        {
+          "expr": "n8n_scaling_mode_queue_jobs_active",
+          "legendFormat": "active",
+          "refId": "B"
+        }
+      ],
+      "title": "n8n queue depth",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "lineInterpolation": "smooth",
+            "showPoints": "never"
+          },
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 15 },
+      "id": 10,
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "expr": "rate(n8n_scaling_mode_queue_jobs_completed[5m])",
+          "legendFormat": "completed/sec",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(n8n_scaling_mode_queue_jobs_failed[5m])",
+          "legendFormat": "failed/sec",
+          "refId": "B"
+        }
+      ],
+      "title": "n8n queue throughput",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "lineInterpolation": "smooth",
+            "showPoints": "never"
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 23 },
+      "id": 11,
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "expr": "sum by (namespace) (kube_pod_status_ready{namespace=~\"paperless|n8n\", condition=\"true\"})",
+          "legendFormat": "{{namespace}} ready",
+          "refId": "A"
+        }
+      ],
+      "title": "Ready pods",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "lineInterpolation": "smooth",
+            "showPoints": "never"
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 23 },
+      "id": 12,
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "expr": "sum by (namespace) (kube_pod_container_status_restarts_total{namespace=~\"paperless|n8n\"})",
+          "legendFormat": "{{namespace}} restarts",
+          "refId": "A"
+        }
+      ],
+      "title": "Container restarts",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "lineInterpolation": "smooth",
+            "showPoints": "never"
+          },
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 23 },
+      "id": 13,
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "expr": "sum by (namespace) (container_memory_working_set_bytes{namespace=~\"paperless|n8n\", container!=\"\", container!=\"POD\", image!=\"\"})",
+          "legendFormat": "{{namespace}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Memory working set by namespace",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 15,
+            "lineInterpolation": "smooth",
+            "showPoints": "never"
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 31 },
+      "id": 14,
+      "options": {
+        "legend": { "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "expr": "sum by (namespace) (rate(container_cpu_usage_seconds_total{namespace=~\"paperless|n8n\", container!=\"\", container!=\"POD\", image!=\"\"}[5m]))",
+          "legendFormat": "{{namespace}}",
+          "refId": "A"
+        }
+      ],
+      "title": "CPU usage by namespace",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 10, "w": 12, "x": 12, "y": 31 },
+      "id": 15,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": true,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "pluginVersion": "12.4.2",
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki" },
+          "editorMode": "builder",
+          "expr": "{namespace=\"paperless\"}",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "Recent Paperless logs",
+      "type": "logs"
+    },
+    {
+      "datasource": { "type": "loki", "uid": "loki" },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 41 },
+      "id": 16,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": true,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "pluginVersion": "12.4.2",
+      "targets": [
+        {
+          "datasource": { "type": "loki", "uid": "loki" },
+          "editorMode": "builder",
+          "expr": "{namespace=\"n8n\"}",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "Recent n8n logs",
+      "type": "logs"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["applications", "n8n", "paperless", "prometheus", "loki", "kubernetes"],
+  "templating": { "list": [] },
+  "time": { "from": "now-6h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Document automation overview",
+  "uid": "document-automation-overview",
+  "version": 1,
+  "weekStart": ""
+}

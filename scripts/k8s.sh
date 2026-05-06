@@ -223,8 +223,8 @@ cmd_secrets() {
     -n n8n \
     --from-literal=N8N_ENCRYPTION_KEY="${N8N_ENCRYPTION_KEY}" \
     --from-literal=N8N_HOST="${N8N_DOMAIN}" \
-    --from-literal=N8N_PORT="443" \
-    --from-literal=N8N_PROTOCOL="https" \
+    --from-literal=N8N_PORT="5678" \
+    --from-literal=N8N_PROTOCOL="http" \
     --dry-run=client -o yaml | kubectl apply -f -
 
   kubectl create secret generic grafana-admin \
@@ -266,6 +266,13 @@ cmd_secrets() {
       --from-literal=AWS_SECRET_ACCESS_KEY="${BACKUP_S3_SECRET_ACCESS_KEY}" \
       --dry-run=client -o yaml | kubectl apply -f -
     echo "backup-s3-credentials applied in immich."
+
+    kubectl create secret generic backup-s3-credentials \
+      -n paperless \
+      --from-literal=AWS_ACCESS_KEY_ID="${BACKUP_S3_ACCESS_KEY_ID}" \
+      --from-literal=AWS_SECRET_ACCESS_KEY="${BACKUP_S3_SECRET_ACCESS_KEY}" \
+      --dry-run=client -o yaml | kubectl apply -f -
+    echo "backup-s3-credentials applied in paperless."
   else
     echo "Skipping backup-s3-credentials (set BACKUP_S3_ACCESS_KEY_ID and BACKUP_S3_SECRET_ACCESS_KEY for S3 dumps)."
   fi
