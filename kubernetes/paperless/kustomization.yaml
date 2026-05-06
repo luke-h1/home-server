@@ -1,0 +1,22 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: paperless
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - pvc-db.yaml
+  - pvc-data.yaml
+  - pvc-media.yaml
+  - pvc-consume.yaml
+  - pvc-export.yaml
+  - postgres.yaml
+  - postgres-service.yaml
+  - redis.yaml
+  - redis-service.yaml
+  - gotenberg.yaml
+  - gotenberg-service.yaml
+  - tika.yaml
+  - tika-service.yaml
+  - paperless.yaml
+  - paperless-service.yaml
+  - ingress.yaml

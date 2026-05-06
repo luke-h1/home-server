@@ -4,3 +4,5 @@ resources:
   - immich
   - immich-backup
   - monitoring
+  - paperless
+  - n8n

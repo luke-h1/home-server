@@ -5,6 +5,10 @@ credentials-file: ${CLOUDFLARE_TUNNEL_CREDENTIALS_FILE}
 ingress:
   - hostname: ${IMMICH_DOMAIN}
     service: ${CLOUDFLARE_TUNNEL_ORIGIN}
+  - hostname: ${DOCUMENT_DOMAIN}
+    service: ${CLOUDFLARE_TUNNEL_ORIGIN}
+  - hostname: ${N8N_DOMAIN}
+    service: ${CLOUDFLARE_TUNNEL_ORIGIN}
   - hostname: ${GRAFANA_DOMAIN}
     service: ${CLOUDFLARE_TUNNEL_ORIGIN}
   - hostname: ${PROMETHEUS_DOMAIN}

@@ -40,8 +40,8 @@ cp kubernetes/.env.example kubernetes/.env
 
 Fill in at least:
 
-- **URLs:** `IMMICH_DOMAIN`, `IMMICH_PUBLIC_URL`, `GRAFANA_DOMAIN`, `GRAFANA_ROOT_URL`, `PROMETHEUS_DOMAIN`, `ALERTS_DOMAIN`, `PUSHGATEWAY_DOMAIN`
-- **Secrets:** `IMMICH_DB_PASSWORD`, `GRAFANA_ADMIN_*`, `ALERTS_BASIC_AUTH_*` (Alertmanager + Prometheus ingress; Blackbox probes), `PUSHGATEWAY_BASIC_AUTH_*` (Pushgateway ingress), `ALERTMANAGER_TELEGRAM_*` (Alertmanager notifications)
+- **URLs:** `IMMICH_DOMAIN`, `IMMICH_PUBLIC_URL`, `DOCUMENT_DOMAIN`, `N8N_DOMAIN`, `GRAFANA_DOMAIN`, `GRAFANA_ROOT_URL`, `PROMETHEUS_DOMAIN`, `ALERTS_DOMAIN`, `PUSHGATEWAY_DOMAIN`
+- **Secrets:** `IMMICH_DB_PASSWORD`, `PAPERLESS_DB_PASSWORD`, `PAPERLESS_SECRET_KEY`, `PAPERLESS_ADMIN_*`, `N8N_DB_PASSWORD`, `N8N_ENCRYPTION_KEY`, `GRAFANA_ADMIN_*`, `ALERTS_BASIC_AUTH_*` (Alertmanager + Prometheus ingress; Blackbox probes), `PUSHGATEWAY_BASIC_AUTH_*` (Pushgateway ingress), `ALERTMANAGER_TELEGRAM_*` (Alertmanager notifications)
 - **S3 backups:** `BACKUP_S3_BUCKET`, `BACKUP_S3_PREFIX`, `AWS_REGION`, optional `BACKUP_S3_ACCESS_KEY_ID` / `BACKUP_S3_SECRET_ACCESS_KEY` for `./scripts/k8s.sh secrets`
 - **Tunnel:** `CLOUDFLARE_TUNNEL_TOKEN`, `CLOUDFLARE_TUNNEL_ORIGIN` (default `http://127.0.0.1:80` → Traefik)
 - **Optional:** `CLOUDFLARE_EXPORTER_API_TOKEN`, `CLOUDFLARE_ACCOUNT_IDS` for the Cloudflare exporter
@@ -55,7 +55,7 @@ Domains in `.env` should match tunnel public hostnames + DNS.
 # or: ./scripts/k8s.sh deploy all
 ```
 
-Partial: `apply immich` | `apply immich-backup` | `apply monitoring` (Prometheus + Loki stack). Preview: `diff all`.
+Partial: `apply immich` | `apply immich-backup` | `apply monitoring` | `apply paperless` | `apply n8n`. Preview: `diff all`.
 
 Daily **08:00, 12:00, and 15:00 UTC:** Postgres dump to S3 + library `aws s3 sync` from the `immich-server` sidecar (RWO PVC).
 
@@ -79,6 +79,8 @@ Optional: `render-config` / `write-config` from `kubernetes/cloudflared-config.y
 | Namespace    | What                                                                                                                                                                                                                                                                |
 | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `immich`     | Immich (Traefik `IngressRoute`, auth rate limit), Postgres, Redis, ML (HPA max 1 by default), library S3 sidecar; daily `pg_dump` CronJob → S3                                                                                                                      |
+| `paperless`  | Paperless-ngx on `document.*` with Postgres, Redis, Apache Tika, Gotenberg, local PVCs for media/data/consume/export                                                                                                                                              |
+| `n8n`        | n8n on `n8n.*` using the official `n8n-io/n8n-hosting` Helm chart, backed by in-cluster Postgres + Redis in queue mode                                                                                                                                                |
 | `monitoring` | Prometheus, Grafana, Alertmanager (basic auth on Prometheus + alerts ingresses), Pushgateway (basic auth ingress for foam-proxy), Loki, Promtail, node-exporter, kube-state-metrics, blackbox, optional Cloudflare exporter, local `fail2ban-security-exporter` DaemonSet (needs host fail2ban) |
 
 Grafana dashboards include community Immich / k8s / Traefik JSON, a **Service Reliability** board for blackbox-monitored services, plus a small **Server security signals** board (`f2b_*` + node/kube metrics) with Loki available for raw pod and auth logs.

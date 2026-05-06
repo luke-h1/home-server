@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: n8n-redis
+  namespace: n8n
+  labels:
+    app: n8n-redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: n8n-redis
+  template:
+    metadata:
+      labels:
+        app: n8n-redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 6379
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi

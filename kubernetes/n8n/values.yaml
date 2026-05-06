@@ -1,0 +1,85 @@
+fullnameOverride: n8n
+
+queueMode:
+  enabled: true
+  workerReplicaCount: 1
+  workerConcurrency: 10
+
+service:
+  type: ClusterIP
+  port: 5678
+
+ingress:
+  enabled: true
+  className: traefik
+  hosts:
+    - host: ${N8N_DOMAIN}
+      paths:
+        - path: /
+          pathType: Prefix
+
+replicaCount: 1
+
+resources:
+  main:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+  worker:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+probes:
+  liveness:
+    enabled: true
+    path: /healthz
+  readiness:
+    enabled: true
+    path: /healthz
+
+webhook:
+  enabled: true
+  url: https://${N8N_DOMAIN}
+
+config:
+  timezone: Europe/London
+  extraEnv:
+    - name: N8N_EDITOR_BASE_URL
+      value: https://${N8N_DOMAIN}
+    - name: N8N_PUBLIC_API_DISABLED
+      value: "false"
+    - name: N8N_RUNNERS_ENABLED
+      value: "true"
+    - name: OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS
+      value: "true"
+
+secretRefs:
+  existingSecret: n8n-secret-config
+
+database:
+  type: postgresdb
+  useExternal: true
+  host: n8n-postgres
+  port: 5432
+  database: n8n
+  schema: public
+  user: n8n
+  passwordSecret:
+    name: n8n-db-password
+    key: password
+
+redis:
+  enabled: true
+  useExternal: true
+  host: n8n-redis
+  port: 6379
+
+pdb:
+  enabled: false
