@@ -44,8 +44,6 @@ spec:
               mountPath: /etc/grafana/provisioning/datasources
             - name: dashboard-providers
               mountPath: /etc/grafana/provisioning/dashboards
-            - name: dashboard-cloudflare
-              mountPath: /var/lib/grafana/dashboards/cloudflare
             - name: dashboard-infra
               mountPath: /var/lib/grafana/dashboards/infrastructure
             - name: dashboard-apps
@@ -67,9 +65,6 @@ spec:
         - name: dashboard-providers
           configMap:
             name: grafana-dashboard-providers
-        - name: dashboard-cloudflare
-          configMap:
-            name: grafana-dashboard-cloudflare-workers
         - name: dashboard-infra
           configMap:
             name: grafana-dashboard-infra

@@ -4,22 +4,13 @@ namespace: monitoring
 generatorOptions:
   disableNameSuffixHash: true
 configMapGenerator:
-  - name: grafana-dashboard-cloudflare-workers
-    files:
-      - dashboards/cloudflare-workers.json
   - name: grafana-dashboard-apps
     files:
-      - dashboards/immich-overview.json
       - dashboards/foam-proxy-overview.json
       - dashboards/now-playing-overview.json
       - dashboards/document-automation-overview.json
   - name: grafana-dashboard-infra
     files:
-      - dashboards/service-reliability.json
-      - dashboards/node-exporter-full.json
-      - dashboards/kube-state-metrics.json
-      - dashboards/blackbox-exporter.json
-      - dashboards/k8s-dashboard-15661.json
       - dashboards/traefik-prometheus.json
       - dashboards/server-security-signals.json
 resources:
@@ -32,13 +23,8 @@ resources:
   - prometheus-config.yaml
   - prometheus.yaml
   - prometheus-service.yaml
-  - kube-state-metrics-clusterrole.yaml
-  - kube-state-metrics.yaml
   - node-exporter.yaml
   - fail2ban-exporter.yaml
-  - blackbox-config.yaml
-  - blackbox-exporter.yaml
-  - cloudflare-exporter.yaml
   - alertmanager-config.yaml
   - alertmanager.yaml
   - alertmanager-service.yaml

@@ -7,13 +7,6 @@ data:
   providers.yaml: |
     apiVersion: 1
     providers:
-      - name: Cloudflare
-        folder: Cloudflare
-        type: file
-        disableDeletion: false
-        updateIntervalSeconds: 60
-        options:
-          path: /var/lib/grafana/dashboards/cloudflare
       - name: Infrastructure
         folder: Infrastructure
         type: file

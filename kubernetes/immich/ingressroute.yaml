@@ -11,11 +11,14 @@ spec:
       priority: 100
       middlewares:
         - name: immich-auth-ratelimit
+        - name: immich-upload-limit
       services:
         - name: immich-server
           port: http
     - match: Host(`${IMMICH_DOMAIN}`)
       priority: 10
+      middlewares:
+        - name: immich-upload-limit
       services:
         - name: immich-server
           port: http

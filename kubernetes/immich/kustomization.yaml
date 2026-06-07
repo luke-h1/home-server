@@ -15,5 +15,6 @@ resources:
   - server.yaml
   - server-service.yaml
   - middleware-ratelimit.yaml
+  - middleware-upload-limit.yaml
   - ingressroute.yaml
   - hpa-machine-learning.yaml

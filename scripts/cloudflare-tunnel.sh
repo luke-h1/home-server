@@ -8,7 +8,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENV_FILE="${K8S_ENV_FILE:-${ROOT}/kubernetes/.env}"
 TPL="${ROOT}/kubernetes/cloudflared-config.yml.tpl"
 
-ENV_SUBST_CF='${IMMICH_DOMAIN}${GRAFANA_DOMAIN}${PROMETHEUS_DOMAIN}${ALERTS_DOMAIN}${PUSHGATEWAY_DOMAIN}${CLOUDFLARE_TUNNEL_ORIGIN}${CLOUDFLARE_TUNNEL_ID}${CLOUDFLARE_TUNNEL_CREDENTIALS_FILE}'
+ENV_SUBST_CF='${DOCUMENT_DOMAIN}${N8N_DOMAIN}${GRAFANA_DOMAIN}${PROMETHEUS_DOMAIN}${ALERTS_DOMAIN}${PUSHGATEWAY_DOMAIN}${UPTIME_LHOWSAM_DOMAIN}${UPTIME_FOAM_DOMAIN}${CLOUDFLARE_TUNNEL_ORIGIN}${CLOUDFLARE_TUNNEL_ID}${CLOUDFLARE_TUNNEL_CREDENTIALS_FILE}'
 
 usage() {
   cat <<'EOF'
@@ -41,11 +41,14 @@ require_root() {
 }
 
 require_domains() {
-  : "${IMMICH_DOMAIN:?}"
+  : "${DOCUMENT_DOMAIN:?}"
+  : "${N8N_DOMAIN:?}"
   : "${GRAFANA_DOMAIN:?}"
   : "${PROMETHEUS_DOMAIN:?}"
   : "${ALERTS_DOMAIN:?}"
   : "${PUSHGATEWAY_DOMAIN:?}"
+  : "${UPTIME_LHOWSAM_DOMAIN:?}"
+  : "${UPTIME_FOAM_DOMAIN:?}"
   : "${CLOUDFLARE_TUNNEL_ORIGIN:?}"
 }
 
@@ -100,11 +103,14 @@ cmd_print_dns_hints() {
   require_domains
   echo "In Cloudflare DNS for each zone, create CNAMEs as shown in Zero Trust → Tunnels → your tunnel → Public hostnames."
   echo "Hostnames to register (proxy ON):"
-  echo "  - ${IMMICH_DOMAIN}"
+  echo "  - ${DOCUMENT_DOMAIN}"
+  echo "  - ${N8N_DOMAIN}"
   echo "  - ${GRAFANA_DOMAIN}"
   echo "  - ${PROMETHEUS_DOMAIN}"
   echo "  - ${ALERTS_DOMAIN}"
   echo "  - ${PUSHGATEWAY_DOMAIN}"
+  echo "  - ${UPTIME_LHOWSAM_DOMAIN}"
+  echo "  - ${UPTIME_FOAM_DOMAIN}"
   echo "Origin service in tunnel UI should match Traefik on the node, e.g. ${CLOUDFLARE_TUNNEL_ORIGIN:-http://127.0.0.1:80}"
 }
 

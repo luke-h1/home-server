@@ -1,0 +1,18 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: uptime-kuma-lhowsam
+  namespace: uptime-kuma
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: "${UPTIME_LHOWSAM_DOMAIN}"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: uptime-kuma-lhowsam
+                port:
+                  number: 3001

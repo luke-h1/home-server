@@ -4,9 +4,9 @@
 #   cp kubernetes/.env.example kubernetes/.env   # then edit
 #   ./scripts/k8s.sh secrets
 #   ./scripts/k8s.sh apply all
-#   ./scripts/k8s.sh apply immich
 #   ./scripts/k8s.sh apply paperless
 #   ./scripts/k8s.sh apply n8n
+#   ./scripts/k8s.sh apply uptime-kuma
 #   ./scripts/k8s.sh upgrade-apps
 #   ./scripts/k8s.sh upgrade-k3s
 #   ./scripts/k8s.sh dns-flush
@@ -19,35 +19,32 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENV_FILE="${K8S_ENV_FILE:-${ROOT}/kubernetes/.env}"
 
-ENV_SUBST_FORMAT='${IMMICH_DOMAIN}${IMMICH_PUBLIC_URL}${DOCUMENT_DOMAIN}${N8N_DOMAIN}${GRAFANA_DOMAIN}${PROMETHEUS_DOMAIN}${ALERTS_DOMAIN}${PUSHGATEWAY_DOMAIN}${GRAFANA_ROOT_URL}${ALERTS_BASIC_AUTH_USER}${ALERTS_BASIC_AUTH_PASSWORD}${BACKUP_S3_BUCKET}${BACKUP_S3_PREFIX}${AWS_REGION}${ALERTMANAGER_TELEGRAM_CHAT_ID}${PAPERLESS_TIME_ZONE}${PAPERLESS_ADMIN_MAIL}${N8N_HELM_CHART_VERSION}'
+ENV_SUBST_FORMAT='${DOCUMENT_DOMAIN}${N8N_DOMAIN}${GRAFANA_DOMAIN}${PROMETHEUS_DOMAIN}${ALERTS_DOMAIN}${PUSHGATEWAY_DOMAIN}${UPTIME_LHOWSAM_DOMAIN}${UPTIME_FOAM_DOMAIN}${GRAFANA_ROOT_URL}${ALERTS_BASIC_AUTH_USER}${ALERTS_BASIC_AUTH_PASSWORD}${BACKUP_S3_BUCKET}${AWS_REGION}${ALERTMANAGER_TELEGRAM_CHAT_ID}${PAPERLESS_TIME_ZONE}${PAPERLESS_ADMIN_MAIL}${N8N_HELM_CHART_VERSION}'
 
 usage() {
   sed -n '2,20p' "$0" | sed 's/^# //'
   echo "
 Commands:
   env-check          Verify kubectl and envsubst; load .env
-  secrets            Create/update immich + paperless + n8n + monitoring secrets (incl. Traefik basic auth on Alertmanager, Prometheus, Pushgateway)
-  apply all|immich|immich-backup|monitoring|paperless|n8n   Deploy selected stack
+  secrets            Create/update paperless + n8n + monitoring secrets (incl. Traefik basic auth on Alertmanager, Prometheus, Pushgateway)
+  apply all|monitoring|paperless|n8n|uptime-kuma   Deploy selected stack
   deploy all            secrets + apply all (first-time convenience)
-  diff all|immich|immich-backup|monitoring|paperless|n8n   Preview changes
-  delete immich|paperless|n8n|monitoring     Delete namespace (destructive)
+  diff all|monitoring|paperless|n8n|uptime-kuma   Preview changes
+  delete paperless|n8n|monitoring|uptime-kuma     Delete namespace (destructive)
   restart [ns]       Rollout restart all deployments in namespace (default: both ns)
-  restart-deploy NS/DEPLOY     e.g. immich/immich-server
-  upgrade-apps       Rollout restart immich + monitoring deployments (image pull latest :release)
+  restart-deploy NS/DEPLOY     e.g. monitoring/grafana
+  upgrade-apps       Rollout restart app + monitoring deployments
   upgrade-k3s        Re-run k3s installer (INSTALL_K3S_CHANNEL / K3S_CHANNEL from .env)
   node-labels        Apply NODE_LABELS from .env to node (see .env.example)
   node-taint         Apply NODE_TAINT from .env (you must add tolerations to workloads)
   node-taint-rm      Remove taint named in NODE_TAINT from .env
-  backup-suspend     Suspend immich-pgdump-s3 CronJob
-  backup-resume      Resume immich-pgdump-s3 CronJob
   dns-flush          Rollout-restart CoreDNS in kube-system (clears in-cluster DNS cache)
 "
 }
 
 require_backup_s3_env() {
-  : "${BACKUP_S3_BUCKET:?Set BACKUP_S3_BUCKET in ${ENV_FILE} (S3 bucket for DB dumps)}"
+  : "${BACKUP_S3_BUCKET:?Set BACKUP_S3_BUCKET in ${ENV_FILE} (S3 bucket for backups)}"
   : "${AWS_REGION:?Set AWS_REGION (e.g. eu-west-2)}"
-  export BACKUP_S3_PREFIX="${BACKUP_S3_PREFIX:-immich/pgdump}"
 }
 
 load_env() {
@@ -81,8 +78,6 @@ require_helm() {
 }
 
 require_domain_vars() {
-  : "${IMMICH_DOMAIN:?Set IMMICH_DOMAIN in ${ENV_FILE}}"
-  : "${IMMICH_PUBLIC_URL:?Set IMMICH_PUBLIC_URL in ${ENV_FILE}}"
   : "${DOCUMENT_DOMAIN:?Set DOCUMENT_DOMAIN in ${ENV_FILE}}"
   : "${N8N_DOMAIN:?Set N8N_DOMAIN in ${ENV_FILE}}"
   : "${GRAFANA_DOMAIN:?Set GRAFANA_DOMAIN in ${ENV_FILE}}"
@@ -90,6 +85,8 @@ require_domain_vars() {
   : "${PROMETHEUS_DOMAIN:?Set PROMETHEUS_DOMAIN in ${ENV_FILE}}"
   : "${ALERTS_DOMAIN:?Set ALERTS_DOMAIN in ${ENV_FILE}}"
   : "${PUSHGATEWAY_DOMAIN:?Set PUSHGATEWAY_DOMAIN in ${ENV_FILE}}"
+  : "${UPTIME_LHOWSAM_DOMAIN:?Set UPTIME_LHOWSAM_DOMAIN in ${ENV_FILE}}"
+  : "${UPTIME_FOAM_DOMAIN:?Set UPTIME_FOAM_DOMAIN in ${ENV_FILE}}"
   : "${ALERTS_BASIC_AUTH_USER:?Set ALERTS_BASIC_AUTH_USER in ${ENV_FILE} (Blackbox probe + Traefik basic auth on Alertmanager)}"
   : "${ALERTS_BASIC_AUTH_PASSWORD:?Set ALERTS_BASIC_AUTH_PASSWORD in ${ENV_FILE}}"
 }
@@ -135,13 +132,6 @@ apply_stack() {
       kustomize_render "${ROOT}/kubernetes" | apply_kustomize_stream
       n8n_chart_deploy
       ;;
-    immich)
-      kustomize_render "${ROOT}/kubernetes/immich" | apply_kustomize_stream
-      ;;
-    immich-backup)
-      require_backup_s3_env
-      kustomize_render "${ROOT}/kubernetes/immich-backup" | apply_kustomize_stream
-      ;;
     monitoring)
       kustomize_render "${ROOT}/kubernetes/monitoring" | apply_kustomize_stream
       ;;
@@ -151,6 +141,9 @@ apply_stack() {
     n8n)
       kustomize_render "${ROOT}/kubernetes/n8n" | apply_kustomize_stream
       n8n_chart_deploy
+      ;;
+    uptime-kuma)
+      kustomize_render "${ROOT}/kubernetes/uptime-kuma" | apply_kustomize_stream
       ;;
     *)
       echo "Unknown target: ${target}" >&2
@@ -168,23 +161,18 @@ diff_stack() {
       kustomize_render "${ROOT}/kubernetes" | kubectl diff -f - || true
       n8n_chart_diff
       ;;
-    immich) kustomize_render "${ROOT}/kubernetes/immich" | kubectl diff -f - || true ;;
-    immich-backup)
-      require_backup_s3_env
-      kustomize_render "${ROOT}/kubernetes/immich-backup" | kubectl diff -f - || true
-      ;;
     monitoring) kustomize_render "${ROOT}/kubernetes/monitoring" | kubectl diff -f - || true ;;
     paperless) kustomize_render "${ROOT}/kubernetes/paperless" | kubectl diff -f - || true ;;
     n8n)
       kustomize_render "${ROOT}/kubernetes/n8n" | kubectl diff -f - || true
       n8n_chart_diff
       ;;
+    uptime-kuma) kustomize_render "${ROOT}/kubernetes/uptime-kuma" | kubectl diff -f - || true ;;
     *) echo "Unknown target" >&2; exit 1 ;;
   esac
 }
 
 cmd_secrets() {
-  : "${IMMICH_DB_PASSWORD:?Set IMMICH_DB_PASSWORD in ${ENV_FILE}}"
   : "${PAPERLESS_DB_PASSWORD:?Set PAPERLESS_DB_PASSWORD in ${ENV_FILE}}"
   : "${PAPERLESS_SECRET_KEY:?Set PAPERLESS_SECRET_KEY in ${ENV_FILE}}"
   : "${PAPERLESS_ADMIN_USER:?Set PAPERLESS_ADMIN_USER in ${ENV_FILE}}"
@@ -195,15 +183,9 @@ cmd_secrets() {
   : "${GRAFANA_ADMIN_USER:?Set GRAFANA_ADMIN_USER in ${ENV_FILE}}"
   : "${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD in ${ENV_FILE}}"
 
-  kubectl create namespace immich 2>/dev/null || true
   kubectl create namespace paperless 2>/dev/null || true
   kubectl create namespace n8n 2>/dev/null || true
   kubectl create namespace monitoring 2>/dev/null || true
-
-  kubectl create secret generic immich-secrets \
-    -n immich \
-    --from-literal=DB_PASSWORD="${IMMICH_DB_PASSWORD}" \
-    --dry-run=client -o yaml | kubectl apply -f -
 
   kubectl create secret generic paperless-secrets \
     -n paperless \
@@ -261,13 +243,6 @@ cmd_secrets() {
 
   if [[ -n "${BACKUP_S3_ACCESS_KEY_ID:-}" && -n "${BACKUP_S3_SECRET_ACCESS_KEY:-}" ]]; then
     kubectl create secret generic backup-s3-credentials \
-      -n immich \
-      --from-literal=AWS_ACCESS_KEY_ID="${BACKUP_S3_ACCESS_KEY_ID}" \
-      --from-literal=AWS_SECRET_ACCESS_KEY="${BACKUP_S3_SECRET_ACCESS_KEY}" \
-      --dry-run=client -o yaml | kubectl apply -f -
-    echo "backup-s3-credentials applied in immich."
-
-    kubectl create secret generic backup-s3-credentials \
       -n paperless \
       --from-literal=AWS_ACCESS_KEY_ID="${BACKUP_S3_ACCESS_KEY_ID}" \
       --from-literal=AWS_SECRET_ACCESS_KEY="${BACKUP_S3_SECRET_ACCESS_KEY}" \
@@ -275,22 +250,6 @@ cmd_secrets() {
     echo "backup-s3-credentials applied in paperless."
   else
     echo "Skipping backup-s3-credentials (set BACKUP_S3_ACCESS_KEY_ID and BACKUP_S3_SECRET_ACCESS_KEY for S3 dumps)."
-  fi
-
-  if [[ -n "${CLOUDFLARE_EXPORTER_API_TOKEN:-}" ]]; then
-    declare -a cf_secret=(
-      kubectl create secret generic cloudflare-exporter
-      -n monitoring
-      --from-literal=CF_API_TOKEN="${CLOUDFLARE_EXPORTER_API_TOKEN}"
-    )
-    [[ -n "${CLOUDFLARE_ACCOUNT_IDS:-}" ]] && cf_secret+=(--from-literal=CF_ACCOUNTS="${CLOUDFLARE_ACCOUNT_IDS}")
-    [[ -n "${CLOUDFLARE_EXPORTER_ZONES:-}" ]] && cf_secret+=(--from-literal=CF_ZONES="${CLOUDFLARE_EXPORTER_ZONES}")
-    [[ -n "${CLOUDFLARE_EXPORTER_EXCLUDE_ZONES:-}" ]] &&
-      cf_secret+=(--from-literal=CF_EXCLUDE_ZONES="${CLOUDFLARE_EXPORTER_EXCLUDE_ZONES}")
-    "${cf_secret[@]}" --dry-run=client -o yaml | kubectl apply -f -
-    echo "cloudflare-exporter secret applied in monitoring (worker metrics → Prometheus → Grafana)."
-  else
-    echo "Skipping cloudflare-exporter secret (set CLOUDFLARE_EXPORTER_API_TOKEN for Cloudflare Workers metrics)."
   fi
 
   if [[ -n "${ALERTMANAGER_TELEGRAM_BOT_TOKEN:-}" && -n "${ALERTMANAGER_TELEGRAM_CHAT_ID:-}" ]]; then
@@ -310,10 +269,10 @@ cmd_secrets() {
 cmd_restart() {
   local ns="${1:-}"
   if [[ -z "${ns}" ]]; then
-    for n in immich paperless n8n monitoring; do
+    for n in paperless n8n monitoring uptime-kuma; do
       kubectl rollout restart deployment -n "${n}" 2>/dev/null || true
     done
-    echo "Restarted deployments in immich, paperless, n8n, and monitoring (if present)."
+    echo "Restarted deployments in paperless, n8n, monitoring, and uptime-kuma (if present)."
     return 0
   fi
   kubectl rollout restart deployment -n "${ns}"
@@ -419,14 +378,14 @@ cmd_node_taint_rm() {
 cmd_delete() {
   local target="$1"
   case "${target}" in
-    immich) kubectl delete namespace immich --wait=false ;;
     paperless) kubectl delete namespace paperless --wait=false ;;
     n8n)
       helm uninstall n8n -n n8n 2>/dev/null || true
       kubectl delete namespace n8n --wait=false
       ;;
     monitoring) kubectl delete namespace monitoring --wait=false ;;
-    *) echo "Use: delete immich | paperless | n8n | monitoring" >&2; exit 1 ;;
+    uptime-kuma) kubectl delete namespace uptime-kuma --wait=false ;;
+    *) echo "Use: delete paperless | n8n | monitoring | uptime-kuma" >&2; exit 1 ;;
   esac
 }
 
@@ -465,7 +424,7 @@ main() {
       [[ "${1:-all}" == "n8n" || "${1:-all}" == "all" ]] && require_helm
       diff_stack "${1:-all}"
       ;;
-    delete) require_tools; load_env; cmd_delete "${1:?immich or monitoring}" ;;
+    delete) require_tools; load_env; cmd_delete "${1:?paperless or monitoring}" ;;
     restart)
       require_tools
       load_env
@@ -477,14 +436,6 @@ main() {
     node-labels) require_tools; load_env; cmd_node_labels ;;
     node-taint) require_tools; load_env; cmd_node_taint ;;
     node-taint-rm) require_tools; load_env; cmd_node_taint_rm ;;
-    backup-suspend)
-      require_tools
-      kubectl patch cronjob immich-pgdump-s3 -n immich -p '{"spec":{"suspend":true}}' --type=merge
-      ;;
-    backup-resume)
-      require_tools
-      kubectl patch cronjob immich-pgdump-s3 -n immich -p '{"spec":{"suspend":false}}' --type=merge
-      ;;
     dns-flush)
       require_tools
       if [[ -f "${ENV_FILE}" ]]; then
@@ -495,20 +446,6 @@ main() {
         export KUBECONFIG="${KUBECONFIG:-}"
       fi
       cmd_dns_flush
-      ;;
-    diagnose-immich-routing)
-      command -v kubectl >/dev/null 2>&1 || {
-        echo "kubectl not found" >&2
-        exit 1
-      }
-      if [[ -f "${ENV_FILE}" ]]; then
-        set -a
-        # shellcheck source=/dev/null
-        source "${ENV_FILE}"
-        set +a
-        export KUBECONFIG="${KUBECONFIG:-}"
-      fi
-      bash "${ROOT}/scripts/diagnose-immich-routing.sh"
       ;;
     *)
       echo "Unknown command: ${cmd}" >&2

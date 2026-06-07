@@ -3,8 +3,6 @@
 tunnel: ${CLOUDFLARE_TUNNEL_ID}
 credentials-file: ${CLOUDFLARE_TUNNEL_CREDENTIALS_FILE}
 ingress:
-  - hostname: ${IMMICH_DOMAIN}
-    service: ${CLOUDFLARE_TUNNEL_ORIGIN}
   - hostname: ${DOCUMENT_DOMAIN}
     service: ${CLOUDFLARE_TUNNEL_ORIGIN}
   - hostname: ${N8N_DOMAIN}
@@ -16,5 +14,9 @@ ingress:
   - hostname: ${ALERTS_DOMAIN}
     service: ${CLOUDFLARE_TUNNEL_ORIGIN}
   - hostname: ${PUSHGATEWAY_DOMAIN}
+    service: ${CLOUDFLARE_TUNNEL_ORIGIN}
+  - hostname: ${UPTIME_LHOWSAM_DOMAIN}
+    service: ${CLOUDFLARE_TUNNEL_ORIGIN}
+  - hostname: ${UPTIME_FOAM_DOMAIN}
     service: ${CLOUDFLARE_TUNNEL_ORIGIN}
   - service: http_status:404

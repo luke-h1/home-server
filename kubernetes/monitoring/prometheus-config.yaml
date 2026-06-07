@@ -21,11 +21,6 @@ data:
       - job_name: alertmanager
         static_configs:
           - targets: ["alertmanager:9093"]
-      - job_name: cloudflare-exporter
-        scrape_interval: 60s
-        scrape_timeout: 45s
-        static_configs:
-          - targets: ["cloudflare-exporter:8080"]
       - job_name: node-exporter
         scrape_interval: 45s
         static_configs:
@@ -44,13 +39,6 @@ data:
             labels:
               service_name: foam-proxy
               namespace: monitoring
-      - job_name: kube-state-metrics
-        scrape_interval: 45s
-        static_configs:
-          - targets: ["kube-state-metrics:8080"]
-            labels:
-              cluster: k3s
-              origin_prometheus: k3s
       - job_name: kubernetes-cadvisor
         scheme: https
         scrape_interval: 90s
@@ -94,15 +82,6 @@ data:
             target_label: kubernetes_namespace
           - source_labels: [__meta_kubernetes_pod_name]
             target_label: kubernetes_pod_name
-      - job_name: immich-server
-        scrape_interval: 45s
-        metrics_path: /metrics
-        static_configs:
-          - targets: ["immich-server.immich.svc.cluster.local:8081"]
-            labels:
-              namespace: immich
-              endpoint: metrics-api
-              service_name: immich-server
       - job_name: n8n-main
         scrape_interval: 45s
         metrics_path: /metrics
@@ -159,162 +138,10 @@ data:
             target_label: pod
           - target_label: service_name
             replacement: n8n-worker
-      - job_name: blackbox-exporter
-        static_configs:
-          - targets: ["blackbox-exporter:9115"]
-      - job_name: blackbox-http
-        metrics_path: /probe
-        scrape_interval: 2m
-        scrape_timeout: 25s
-        params:
-          module: [http_2xx]
-        static_configs:
-          - targets:
-              - "${IMMICH_PUBLIC_URL}/api/server/ping"
-            labels:
-              service: immich
-          - targets:
-              - "https://${DOCUMENT_DOMAIN}/accounts/login/"
-            labels:
-              service: paperless
-          - targets:
-              - "https://${N8N_DOMAIN}"
-            labels:
-              service: n8n
-          - targets:
-              - "${GRAFANA_ROOT_URL}/api/health"
-            labels:
-              service: grafana
-        relabel_configs:
-          - source_labels: [__address__]
-            target_label: __param_target
-          - source_labels: [__param_target]
-            target_label: instance
-          - target_label: __address__
-            replacement: blackbox-exporter:9115
-      - job_name: blackbox-http-public
-        metrics_path: /probe
-        scrape_interval: 5m
-        scrape_timeout: 25s
-        params:
-          module: [http_2xx_public]
-        static_configs:
-          - targets:
-              - "https://notes.foam-app.com/api/health"
-            labels:
-              service: notes-foam-app
-          - targets:
-              - "https://expo-router.lhowsam.com"
-            labels:
-              service: expo-router
-          - targets:
-              - "https://feature-flags-24.talks.lhowsam.com/1"
-            labels:
-              service: feature-flags-24-talks
-          - targets:
-              - "https://auth.foam-app.com/api/healthcheck"
-            labels:
-              service: auth-foam-app
-          - targets:
-              - "https://auth-staging.foam-app.com/api/healthcheck"
-            labels:
-              service: auth-staging-foam-app
-          - targets:
-              - "https://nowplaying-staging.lhowsam.com/api/health"
-            labels:
-              service: nowplaying-staging
-          - targets:
-              - "https://nowplaying.lhowsam.com/api/health"
-            labels:
-              service: nowplaying
-          - targets:
-              - "https://dev.lhowsam.com"
-            labels:
-              service: dev-lhowsam
-          - targets:
-              - "https://lhowsam.com"
-            labels:
-              service: lhowsam
-        relabel_configs:
-          - source_labels: [__address__]
-            target_label: __param_target
-          - source_labels: [__param_target]
-            target_label: instance
-          - target_label: __address__
-            replacement: blackbox-exporter:9115
-      - job_name: blackbox-http-public-slow
-        metrics_path: /probe
-        scrape_interval: 10m
-        scrape_timeout: 25s
-        params:
-          module: [http_2xx_public]
-        static_configs:
-          - targets:
-              - "https://chars.lhowsam.com"
-            labels:
-              service: chars-lhowsam
-        relabel_configs:
-          - source_labels: [__address__]
-            target_label: __param_target
-          - source_labels: [__param_target]
-            target_label: instance
-          - target_label: __address__
-            replacement: blackbox-exporter:9115
-      - job_name: blackbox-http-basic-auth
-        metrics_path: /probe
-        scrape_interval: 2m
-        scrape_timeout: 25s
-        params:
-          module: [http_2xx_basic_auth]
-        static_configs:
-          # - targets:
-          #     - "https://${ALERTS_DOMAIN}/-/healthy"
-          #   labels:
-          #     service: alertmanager
-          # Prometheus public readiness probe disabled on request.
-          # - targets:
-          #     - "https://${PROMETHEUS_DOMAIN}/-/ready"
-          #   labels:
-          #     service: prometheus
-        relabel_configs:
-          - source_labels: [__address__]
-            target_label: __param_target
-          - source_labels: [__param_target]
-            target_label: instance
-          - target_label: __address__
-            replacement: blackbox-exporter:9115
   alerts.yml: |
     groups:
-      # - name: external_services_http
-      #   rules:
-      #     - alert: HttpProbeError
-      #       expr: probe_success{job=~"blackbox-http|blackbox-http-public|blackbox-http-public-slow|blackbox-http-basic-auth"} == 0
-      #       for: 3m
-      #       labels:
-      #         severity: error
-      #       annotations:
-      #         summary: "{{ $labels.service }} HTTP probe failed"
-      #         description: "Blackbox cannot reach {{ $labels.instance }} or it returned a non-2xx response; probe_success has been 0 for at least 3m."
-      #     - alert: HttpProbeWarning
-      #       expr: avg_over_time(probe_duration_seconds{job=~"blackbox-http|blackbox-http-public|blackbox-http-public-slow|blackbox-http-basic-auth"}[30m]) > 2
-      #       for: 10m
-      #       labels:
-      #         severity: warning
-      #       annotations:
-      #         summary: "{{ $labels.service }} HTTP probe is slow"
-      #         description: "Blackbox probe duration for {{ $labels.instance }} has averaged above 2s over the last 30m."
-
       - name: applications_in_cluster
         rules:
-          - alert: ImmichServerDown
-            expr: up{job="immich-server"} == 0
-            for: 3m
-            labels:
-              severity: critical
-              service: immich
-            annotations:
-              summary: "Immich server metrics target is down"
-              description: "Prometheus cannot scrape immich-server in the cluster (in-cluster availability)."
           - alert: N8NMainDown
             expr: up{job="n8n-main"} == 0
             for: 5m
@@ -333,38 +160,11 @@ data:
             annotations:
               summary: "n8n worker metrics target is down"
               description: "Prometheus cannot scrape any n8n worker on /metrics in the cluster."
-          - alert: PaperlessPodNotReady
-            expr: max(kube_pod_status_ready{namespace="paperless", condition="true", pod=~"paperless-.*"}) < 1
-            for: 5m
-            labels:
-              severity: critical
-              service: paperless
-            annotations:
-              summary: "Paperless web pod is not ready"
-              description: "No ready Paperless web pod is available in the paperless namespace."
-          - alert: PaperlessPublicProbeFailed
-            expr: probe_success{job="blackbox-http", service="paperless"} == 0
-            for: 5m
-            labels:
-              severity: error
-              service: paperless
-            annotations:
-              summary: "Paperless public endpoint probe failed"
-              description: "Blackbox probe for documents.lhowsam.com is failing."
-          - alert: N8NPublicProbeFailed
-            expr: probe_success{job="blackbox-http", service="n8n"} == 0
-            for: 5m
-            labels:
-              severity: error
-              service: n8n
-            annotations:
-              summary: "n8n public endpoint probe failed"
-              description: "Blackbox probe for n8n.lhowsam.com is failing."
 
       - name: monitoring_infrastructure
         rules:
           - alert: InfrastructureTargetDown
-            expr: up{job=~"prometheus|alertmanager|kube-state-metrics|node-exporter|blackbox-exporter|traefik"} == 0
+            expr: up{job=~"prometheus|alertmanager|node-exporter|traefik"} == 0
             for: 5m
             labels:
               severity: warning
